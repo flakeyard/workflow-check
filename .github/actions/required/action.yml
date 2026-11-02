@@ -1,0 +1,36 @@
+name: Required
+description: >-
+  Fails unless every job of the caller and of this workflow succeeded or was
+  allowed to be skipped, and every other job of the run attempt has completed
+  without failing.
+inputs:
+  caller:
+    description: The needs of the caller job, toJSON(needs), as the caller passed it.
+    required: true
+  check:
+    description: The needs of the job that runs this action, toJSON(needs).
+    required: true
+  caller-may-skip:
+    description: JSON array of caller job ids that may be skipped.
+    default: "[]"
+  check-may-skip:
+    description: JSON object of the job ids of this workflow and whether they may be skipped.
+    required: true
+  check-run-id:
+    description: The check run id of the job, job.check_run_id.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        RUN_ID: ${{ github.run_id }}
+        RUN_ATTEMPT: ${{ github.run_attempt }}
+        CALLER: ${{ inputs.caller }}
+        CHECK: ${{ inputs.check }}
+        CALLER_MAY_SKIP: ${{ inputs.caller-may-skip }}
+        CHECK_MAY_SKIP: ${{ inputs.check-may-skip }}
+        CHECK_RUN_ID: ${{ inputs.check-run-id }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'

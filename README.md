@@ -19,12 +19,16 @@ referenced with `$/`:
 
 - `context`: the context of the commit status, from the name of the job that
   runs it, read through `job.check_run_id`;
-- `commit-status`: the commit status of a run started by `workflow_dispatch`.
+- `commit-status`: the commit status of a run started by `workflow_dispatch`;
+- `required`: the verdict over the jobs of the caller and of the workflow,
+  cross-checked against the jobs of the run attempt; its rules are the named
+  `def`s of `required/verdict.jq`.
 
 The actions run their `run.sh` and source the helpers in `lib`: `lib/github/`
 calls the GitHub API (`api.sh`, which tells a missing resource from an error,
-and `jobs.sh`), and `lib/report.sh` reports errors, warnings, notices and lines
-of the job summary, escaping the text it is given.
+and `jobs.sh`, which reads the name of a job and the jobs of a run attempt), and
+`lib/report.sh` reports errors, warnings, notices and lines of the job summary,
+escaping the text it is given.
 
 `tests/run.sh` tests the scripts with the stub of `gh` in `tests/bin`; the
 suites in `tests/unit` mirror the actions and the helpers and share the helpers

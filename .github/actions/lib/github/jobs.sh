@@ -27,3 +27,21 @@ caller_prefix() {
     printf '%s / \n' "${name% / *}"
   fi
 }
+
+# Ids of workflow runs and numbers of their attempts.
+readonly RUN_NUMBER_FORM='^[1-9][0-9]*$'
+
+# attempt_jobs RUN_ID ATTEMPT: print the jobs of one attempt of a run, every
+# job of the run with the result it has in that attempt, as a JSON array of
+# {name, status, conclusion}.
+attempt_jobs() {
+  local run_id=$1 attempt=$2 jobs
+  [[ $run_id =~ $RUN_NUMBER_FORM && $attempt =~ $RUN_NUMBER_FORM ]] || {
+    echo "not a run id and attempt: $run_id, $attempt" >&2
+    return 1
+  }
+  jobs=$(gh api --paginate \
+    "repos/$REPO/actions/runs/$run_id/attempts/$attempt/jobs?per_page=100" \
+    --jq '.jobs[] | {name, status, conclusion}') || return 1
+  jq -s . <<<"$jobs"
+}

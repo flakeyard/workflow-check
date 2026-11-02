@@ -1,0 +1,134 @@
+# shellcheck shell=bash
+# Tests of required.
+# shellcheck disable=SC2016 # Code spans of the summary, not expansions.
+
+script=required/run.sh
+attempt_path="repos/o/r/actions/runs/7/attempts/2/jobs?per_page=100"
+
+# Jobs of the attempt: the caller's install and this workflow's jobs.
+readonly ATTEMPT_DONE='{"jobs":[
+  {"name":"install","status":"completed","conclusion":"success"},
+  {"name":"check / pending","status":"completed","conclusion":"skipped"},
+  {"name":"check / meta","status":"completed","conclusion":"success"},
+  {"name":"check / required","status":"in_progress","conclusion":null}]}'
+
+# required_setup: a pull request run whose jobs all succeeded.
+required_setup() {
+  setup
+  apply RUN_ID=7 RUN_ATTEMPT=2 CHECK_RUN_ID=99 \
+    CALLER='{"install":{"result":"success","outputs":{}}}' \
+    CHECK='{"pending":{"result":"skipped","outputs":{}},"meta":{"result":"success","outputs":{}}}' \
+    CALLER_MAY_SKIP='[]' CHECK_MAY_SKIP='{"pending":true,"flake":true}'
+  fixture "repos/$REPO/actions/jobs/99" '{"name":"check / required"}'
+  fixture "$attempt_path" "$ATTEMPT_DONE"
+}
+
+required_setup
+run "required: every job succeeded" ok "$script"
+expect summary '| `caller.install` | `success` |'
+expect summary '| `check.pending` | `skipped` |'
+finish
+
+required_setup
+apply CALLER='{}'
+run "required: a caller without jobs passes {}" ok "$script"
+finish
+
+# A needs input that is not a needs context.
+for caller in "" "null" "[]" '{"install":"success"}' '{"install":{"outputs":{}}}' "{"; do
+  required_setup
+  apply CALLER="$caller"
+  run "required: rejects the needs '$caller'" fail "$script"
+  expect message "the input needs is missing or malformed"
+  finish
+done
+
+required_setup
+apply CALLER='{"install":{"result":"failure","outputs":{}}}'
+run "required: a failed caller job fails" fail "$script"
+expect message "jobs that did not succeed: caller.install: failure"
+finish
+
+required_setup
+apply CALLER='{"install":{"result":"cancelled","outputs":{}}}'
+run "required: a cancelled caller job fails" fail "$script"
+expect message "caller.install: cancelled"
+finish
+
+required_setup
+apply CALLER='{"install":{"result":"skipped","outputs":{}}}'
+run "required: a skipped caller job fails unless it may be skipped" fail "$script"
+expect message "caller.install: skipped"
+finish
+
+required_setup
+apply CALLER='{"install":{"result":"skipped","outputs":{}}}' CALLER_MAY_SKIP='["install"]'
+run "required: a caller job may be skipped" ok "$script"
+finish
+
+required_setup
+apply CHECK='{"pending":{"result":"skipped","outputs":{}},"meta":{"result":"skipped","outputs":{}}}'
+run "required: a skipped job of this workflow fails unless it may be skipped" fail "$script"
+expect message "check.meta: skipped"
+finish
+
+required_setup
+apply CHECK_MAY_SKIP='{"pending":false,"flake":true}'
+run "required: pending may not be skipped on dispatch" fail "$script"
+expect message "check.pending: skipped"
+finish
+
+required_setup
+apply CALLER='{"meta":{"result":"failure","outputs":{}}}' CALLER_MAY_SKIP='["meta"]'
+apply CHECK='{"pending":{"result":"skipped","outputs":{}},"meta":{"result":"success","outputs":{}}}'
+run "required: caller and own jobs of one id are told apart" fail "$script"
+expect message "caller.meta: failure"
+expect no-message "check.meta: success,"
+finish
+
+required_setup
+fixture "$attempt_path" '{"jobs":[
+  {"name":"install","status":"completed","conclusion":"success"},
+  {"name":"lint","status":"in_progress","conclusion":null},
+  {"name":"check / required","status":"in_progress","conclusion":null}]}'
+run "required: a job still running is not in needs" fail "$script"
+expect message "run.lint: in_progress, not in needs of the check job"
+finish
+
+required_setup
+fixture "$attempt_path" '{"jobs":[
+  {"name":"install","status":"completed","conclusion":"success"},
+  {"name":"lint","status":"completed","conclusion":"timed_out"}]}'
+run "required: a failed job outside needs fails" fail "$script"
+expect message "run.lint: timed_out"
+finish
+
+required_setup
+fixture "$attempt_path" '{"jobs":[{"name":"install","status":"completed","conclusion":"success"}]}'
+next_page "$attempt_path" 2 '{"jobs":[{"name":"docs","status":"queued","conclusion":null}]}'
+run "required: every page of the attempt is read" fail "$script"
+expect message "run.docs: queued, not in needs of the check job"
+finish
+
+required_setup
+fixture "$attempt_path" "HTTP 500"
+run "required: an API error fails" fail "$script"
+expect message "cannot read the jobs of attempt 2 of run 7"
+finish
+
+required_setup
+fixture "repos/$REPO/actions/jobs/99" '{"name":"required"}'
+run "required: fails outside a called workflow" fail "$script"
+finish
+
+required_setup
+apply CALLER_MAY_SKIP='"install"'
+run "required: rejects a caller-may-skip that is not a list" fail "$script"
+finish
+
+required_setup
+apply CALLER='{"x\n::warning::forged":{"result":"failure"}}'
+run "required: job ids are escaped" fail "$script"
+expect message "caller.x%0A::warning::forged: failure"
+expect no-command warning
+finish
