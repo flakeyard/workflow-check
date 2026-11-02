@@ -1,0 +1,23 @@
+name: Status context
+description: >-
+  Derives the context of the commit status from the name of the job that runs
+  this action: "check / pending" and "check / required" both give
+  "check / required".
+inputs:
+  check-run-id:
+    description: The check run id of the job, job.check_run_id.
+    required: true
+outputs:
+  context:
+    description: The context, the job's name with its last part replaced by required.
+    value: ${{ steps.run.outputs.context }}
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        CHECK_RUN_ID: ${{ inputs.check-run-id }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'

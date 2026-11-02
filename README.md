@@ -15,9 +15,15 @@ release.
 
 The workflow only composes steps. Each step's logic is a small composite action
 in [`.github/actions`](.github/actions), released together with the workflow and
-referenced with `$/`. The actions run their `run.sh` and source the helpers in
-`lib`: `lib/github/api.sh` calls the GitHub API and tells a missing resource
-from an error, and `lib/report.sh` reports errors, warnings, notices and lines
+referenced with `$/`:
+
+- `context`: the context of the commit status, from the name of the job that
+  runs it, read through `job.check_run_id`;
+- `commit-status`: the commit status of a run started by `workflow_dispatch`.
+
+The actions run their `run.sh` and source the helpers in `lib`: `lib/github/`
+calls the GitHub API (`api.sh`, which tells a missing resource from an error,
+and `jobs.sh`), and `lib/report.sh` reports errors, warnings, notices and lines
 of the job summary, escaping the text it is given.
 
 `tests/run.sh` tests the scripts with the stub of `gh` in `tests/bin`; the
