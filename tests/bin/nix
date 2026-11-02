@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Stub of nix for tests of flake-checks.
+#
+# "config show system" prints $NIX_SYSTEM. "eval --apply EXPR" prints
+# $NIX_DECLARED for the expression of the declared systems and $NIX_CHECKS
+# for the names of the checks. "flake check" fails when $NIX_EVAL_ERROR is
+# set. "build" is appended to $CALLS; it and "path-info" fail for the checks
+# named in $NIX_FAILED, separated by spaces.
+set -euo pipefail
+
+# check_name INSTALLABLE: the name of a check in FLAKE#.checks.SYSTEM."NAME".
+check_name() {
+  local name=${1##*.\"}
+  printf '%s\n' "${name%\"}"
+}
+
+# failed NAME: the check NAME fails to build.
+failed() {
+  [[ " ${NIX_FAILED:-} " == *" $1 "* ]]
+}
+
+# evaluate EXPR: print the result of an --apply expression.
+evaluate() {
+  case $1 in
+    *concatMap*) printf '%s\n' "$NIX_DECLARED" ;;
+    *checks*) printf '%s\n' "$NIX_CHECKS" ;;
+    *)
+      echo "stub nix: unknown expression: $1" >&2
+      exit 2
+      ;;
+  esac
+}
+
+case "$1 ${2:-}" in
+  "config show") printf '%s\n' "$NIX_SYSTEM" ;;
+  "eval --json") evaluate "${5:?}" ;;
+  "flake check")
+    if [[ -n ${NIX_EVAL_ERROR:-} ]]; then
+      echo "error: $NIX_EVAL_ERROR" >&2
+      exit 1
+    fi
+    ;;
+  "build --no-link")
+    echo "nix $*" >>"$CALLS"
+    for installable in "${@:5}"; do
+      if failed "$(check_name "$installable")"; then exit 1; fi
+    done
+    ;;
+  path-info*) ! failed "$(check_name "$2")" ;;
+  *)
+    echo "stub nix: unsupported: $*" >&2
+    exit 2
+    ;;
+esac
