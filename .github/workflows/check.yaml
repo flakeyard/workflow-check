@@ -19,6 +19,16 @@ on:
         description: JSON array of the caller's job ids that may be skipped.
         type: string
         default: "[]"
+      pr-title:
+        description: >-
+          Check that pull request titles follow Conventional Commits. false
+          switches the check off; it then succeeds with a notice.
+        type: boolean
+        default: true
+      pr-title-types:
+        description: The types allowed in pull request titles.
+        type: string
+        default: feat fix docs chore ci refactor test build perf revert
 
 permissions: {}
 
@@ -47,8 +57,14 @@ jobs:
     permissions:
       contents: read # repository files through the contents API
       pull-requests: read # the title of the pull request
+    # Every check runs also when another one failed.
     steps:
       - uses: $/.github/actions/preflight
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/pr-title
+        with:
+          enabled: ${{ inputs.pr-title }}
+          types: ${{ inputs.pr-title-types }}
 
   required:
     needs: [pending, meta]
