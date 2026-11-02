@@ -13,10 +13,12 @@ release.
 
 ## Development
 
-The workflow only composes steps. Each step's logic is a small composite action
-in [`.github/actions`](.github/actions), released together with the workflow and
+The workflow in [`.github/workflows/check.yaml`](.github/workflows/check.yaml)
+only composes steps. Each step's logic is a small composite action in
+[`.github/actions`](.github/actions), released together with the workflow and
 referenced with `$/`:
 
+- `preflight`: the event of the caller, from a list of supported events;
 - `context`: the context of the commit status, from the name of the job that
   runs it, read through `job.check_run_id`;
 - `commit-status`: the commit status of a run started by `workflow_dispatch`;
@@ -32,10 +34,21 @@ escaping the text it is given.
 
 `tests/run.sh` tests the scripts with the stub of `gh` in `tests/bin`; the
 suites in `tests/unit` mirror the actions and the helpers and share the helpers
-in `tests/lib`. The flake of the repository runs them as `checks.unit`, and
-checks the scripts with shellcheck and shfmt (`checks.shell`) and the Nix files
-with nixfmt (`checks.formatting`). Before a pull request, run `nix flake check`,
-actionlint, zizmor, prettier, markdownlint, typos and `reuse lint`.
+in `tests/lib`. `tests/unit/workflows/check.sh` checks the jobs of the workflow:
+their permissions, references, conditions and which of them may be skipped;
+`tests/unit/workflows/check-self.sh` checks that the repository's own CI calls
+the workflow as every caller must. They read the workflows with mikefarah `yq`
+v4, which GitHub-hosted runners have, and fail without it; locally, run
+`nix shell nixpkgs#yq-go -c tests/run.sh`.
+
+The repository checks itself with
+[`check-self.yaml`](.github/workflows/check-self.yaml), which calls the workflow
+of the same commit through `$/`, so a pull request is checked by its own
+version. The flake of the repository runs the tests as `checks.unit`, and checks
+the scripts with shellcheck and shfmt (`checks.shell`) and the Nix files with
+nixfmt (`checks.formatting`). Before a pull request, run `nix flake check`,
+actionlint, zizmor, prettier, markdownlint, typos and `reuse lint`; actionlint
+does not yet know the `$/` syntax and reports it as an error.
 
 ## Bootstrap
 
