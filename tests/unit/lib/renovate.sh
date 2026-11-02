@@ -17,3 +17,30 @@ for preset in ":semanticCommits" "local>flakeyard/renovate-config" "gitlab>a/b" 
   run_lib "renovate: no GitHub repository in $preset" fail "$lib" preset_repository "$preset"
   finish
 done
+
+setup
+run_lib "renovate: the tag of a preset" ok "$lib" preset_tag "github>a/b//p:c#v1.2.3"
+expect stdout "v1.2.3"
+finish
+
+setup
+run_lib "renovate: no tag" ok "$lib" preset_tag "github>a/b"
+expect stdout ""
+finish
+
+setup
+run_lib "renovate: the repository of a local preset" ok "$lib" preset_source "local>a/b:c"
+expect stdout "a/b"
+finish
+
+for preset in ":semanticCommits" "config:recommended" "helpers:pinGitHubActionDigests"; do
+  setup
+  run_lib "renovate: $preset is built in" ok "$lib" is_builtin_preset "$preset"
+  finish
+done
+
+for preset in "acme:x" "github>a/b" "@acme/renovate-config" "renovate-config-acme"; do
+  setup
+  run_lib "renovate: $preset is not built in" fail "$lib" is_builtin_preset "$preset"
+  finish
+done
