@@ -29,6 +29,19 @@ on:
         description: The types allowed in pull request titles.
         type: string
         default: feat fix docs chore ci refactor test build perf revert
+      renovate-config:
+        description: >-
+          Check that renovate.json is the only Renovate configuration and
+          extends a preset of renovate-presets. false switches the check off;
+          it then succeeds with a notice.
+        type: boolean
+        default: true
+      renovate-presets:
+        description: >-
+          JSON array of owner/repo whose presets renovate.json must extend;
+          empty allows any preset.
+        type: string
+        default: "[]"
 
 permissions: {}
 
@@ -65,6 +78,11 @@ jobs:
         with:
           enabled: ${{ inputs.pr-title }}
           types: ${{ inputs.pr-title-types }}
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/renovate-config
+        with:
+          enabled: ${{ inputs.renovate-config }}
+          presets: ${{ inputs.renovate-presets }}
 
   required:
     needs: [pending, meta]

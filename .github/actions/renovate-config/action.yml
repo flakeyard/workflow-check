@@ -1,0 +1,24 @@
+name: Renovate configuration
+description: >-
+  Fails unless renovate.json is the only Renovate configuration of the
+  repository and extends a preset of one of the given repositories.
+inputs:
+  enabled:
+    description: "'false' switches the check off; it then succeeds with a notice."
+    default: "true"
+  presets:
+    description: >-
+      JSON array of owner/repo whose presets renovate.json must extend; empty
+      allows any preset.
+    default: "[]"
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.sha }}
+        ENABLED: ${{ inputs.enabled }}
+        PRESETS: ${{ inputs.presets }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'

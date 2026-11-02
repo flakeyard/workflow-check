@@ -18,3 +18,12 @@ next_page() {
   local path=$1 page=$2 body=$3
   printf '%s\n' "$body" >"$(fixture_file "$path").$page"
 }
+
+# file_fixture PATH CONTENT: answer the contents API for a file at SHA, with
+# the base64 wrapped at 60 characters like the API does.
+file_fixture() {
+  local path=$1 content=$2 encoded
+  encoded=$(printf '%s' "$content" | base64 -w 60 | paste -sd '#' | sed 's/#/\\n/g')
+  fixture "repos/$REPO/contents/$path?ref=$SHA" \
+    "{\"type\":\"file\",\"encoding\":\"base64\",\"content\":\"$encoded\"}"
+}
