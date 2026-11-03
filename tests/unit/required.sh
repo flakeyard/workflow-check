@@ -103,6 +103,37 @@ run "required: a failed job outside needs fails" fail "$script"
 expect message "run.lint: timed_out"
 finish
 
+# A job that its if: skipped, forgotten in needs.
+for conclusion in skipped neutral; do
+  required_setup
+  fixture "$attempt_path" '{"jobs":[
+    {"name":"install","status":"completed","conclusion":"success"},
+    {"name":"lint","status":"completed","conclusion":"'"$conclusion"'"}]}'
+  run "required: a job outside needs that is $conclusion fails" fail "$script"
+  expect message "run.lint: $conclusion, not in caller-may-skip"
+  finish
+done
+
+required_setup
+apply CALLER='{"install":{"result":"skipped","outputs":{}}}' CALLER_MAY_SKIP='["install"]'
+fixture "$attempt_path" '{"jobs":[{"name":"install","status":"completed","conclusion":"skipped"}]}'
+run "required: a job that may be skipped is matched by its name in the attempt" ok "$script"
+expect summary '| `caller.install` | `skipped` |'
+finish
+
+required_setup
+apply CALLER_MAY_SKIP='["lint"]'
+fixture "$attempt_path" '{"jobs":[{"name":"lint (a, b)","status":"completed","conclusion":"skipped"}]}'
+run "required: a skipped matrix job is matched without its values" ok "$script"
+finish
+
+required_setup
+apply CALLER_MAY_SKIP='["lint"]'
+fixture "$attempt_path" '{"jobs":[{"name":"Lint","status":"completed","conclusion":"skipped"}]}'
+run "required: a skipped job named other than its id fails" fail "$script"
+expect message "run.Lint: skipped, not in caller-may-skip"
+finish
+
 required_setup
 fixture "$attempt_path" '{"jobs":[{"name":"install","status":"completed","conclusion":"success"}]}'
 next_page "$attempt_path" 2 '{"jobs":[{"name":"docs","status":"queued","conclusion":null}]}'
