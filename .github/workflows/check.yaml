@@ -135,7 +135,9 @@ jobs:
           allow-unpinned: ${{ inputs.allow-unpinned }}
 
   flake:
-    name: flake (${{ matrix.system }})
+    # No name: GitHub names each job after its matrix values, and a job
+    # skipped before the matrix expands is named flake instead of showing an
+    # unexpanded expression.
     if: ${{ !cancelled() && inputs.flake != '' }}
     strategy:
       fail-fast: false

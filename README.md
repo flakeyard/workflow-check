@@ -74,8 +74,8 @@ rulesets of the repository. Reference the workflow by full commit SHA, as above.
 
 ## Checks
 
-- **Flake checks.** On every system of `systems`, the job `flake (<system>)`
-  checks out the repository, installs Nix with
+- **Flake checks.** On every system of `systems`, the job
+  `flake (<system>, <runner>)` checks out the repository, installs Nix with
   [action-setup-nix](https://github.com/flakeyard/action-setup-nix), checks that
   Nix builds for the runner's own system, that the systems the flake declares in
   `checks`, `packages`, `apps`, `devShells` and `formatter` are exactly those of
