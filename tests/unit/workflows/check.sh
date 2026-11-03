@@ -9,7 +9,7 @@ readonly CHECK_JOBS='["meta","pending","required"]'
 # The permissions the caller grants; no job may ask for more.
 readonly CHECK_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":"read","statuses":"write"}'
 # The checks of meta that an input switches, in their order.
-readonly SWITCHED_CHECKS='["pr-title"]'
+readonly SWITCHED_CHECKS='["pr-title","renovate-config"]'
 readonly DISPATCHED="github.event_name == 'workflow_dispatch'"
 
 # check_test NAME FILTER: FILTER is true of check.yaml.
