@@ -3,8 +3,9 @@
 # of this job, succeeded or is allowed to be skipped by CALLER_MAY_SKIP and
 # CHECK_MAY_SKIP, and every job of attempt RUN_ATTEMPT of run RUN_ID outside
 # this workflow has completed and succeeded, or was skipped and may be. A job
-# that has not completed is missing from the needs of the caller job. Writes a
-# table of the jobs to the job summary.
+# that has not completed is missing from the needs of the caller job. Fails
+# also when the attempt does not list this job. Writes a table of the jobs to
+# the job summary.
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
 shopt -s inherit_errexit
@@ -40,15 +41,21 @@ check_inputs() {
   is_needs "$CHECK" || fail "the needs of the job required are malformed"
   is_id_list "$CALLER_MAY_SKIP" || fail "caller-may-skip is not a JSON array of job ids"
   is_skip_map "$CHECK_MAY_SKIP" || fail "check-may-skip is not a JSON object of booleans"
+  is_skip_map_of "$CHECK" || fail "check-may-skip names jobs that are not in the needs of the job required"
 }
 
-# verdict PREFIX JOBS: print the entries of verdict.jq.
+# is_skip_map_of NEEDS: CHECK_MAY_SKIP names only jobs of NEEDS.
+is_skip_map_of() {
+  jq -e --argjson needs "$1" 'keys - ($needs | keys) == []' <<<"$CHECK_MAY_SKIP" >/dev/null
+}
+
+# verdict OWN PREFIX JOBS: print the entries of verdict.jq.
 verdict() {
-  local prefix=$1 jobs=$2
+  local own=$1 prefix=$2 jobs=$3
   jq -n --argjson caller "$CALLER" --argjson check "$CHECK" \
     --argjson caller_may_skip "$CALLER_MAY_SKIP" \
     --argjson check_may_skip "$CHECK_MAY_SKIP" \
-    --argjson jobs "$jobs" --arg prefix "$prefix" \
+    --argjson jobs "$jobs" --arg own "$own" --arg prefix "$prefix" \
     -f "$(dirname "$0")/verdict.jq"
 }
 
@@ -68,7 +75,7 @@ prefix=$(caller_prefix "$own")
 [[ -n $prefix ]] || fail "job $own does not run in a called workflow"
 jobs=$(attempt_jobs "$RUN_ID" "$RUN_ATTEMPT") \
   || fail "cannot read the jobs of attempt $RUN_ATTEMPT of run $RUN_ID"
-entries=$(verdict "$prefix" "$jobs")
+entries=$(verdict "$own" "$prefix" "$jobs")
 summary_table "$entries"
 problems=$(jq -r '[.[] | select(.ok | not) | "\(.name): \(.result)"] | join(", ")' <<<"$entries")
 [[ -z $problems ]] || fail "jobs that did not succeed: $problems"

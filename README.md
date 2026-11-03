@@ -157,10 +157,12 @@ The calling job must grant `actions: read`, `contents: read`,
   job of the workflow succeeded, or was skipped and may be. Jobs of the caller
   and of the workflow are told apart (`caller.<id>` and `check.<id>`), so a
   caller job may have the id of a job of the workflow. It also reads the jobs of
-  the run attempt: a job outside `check / *` that has not completed is missing
-  from `needs`, and one that failed, or was skipped and may not be, fails
-  `required`, listed or not. After **Re-run failed jobs**, the attempt lists
-  every job, the reused ones with their earlier result.
+  the run attempt, which must list `required` itself: a job other than those of
+  the workflow that has not completed is missing from `needs`, and one that
+  failed, or was skipped and may not be, fails `required`, listed or not. A
+  caller job named like `check / lint` is checked as any other. After **Re-run
+  failed jobs**, the attempt lists every job, the reused ones with their earlier
+  result.
 - **Dispatched runs.** Check runs of runs started by `workflow_dispatch` do not
   count for the required checks of a pull request, so such runs post the result
   as a commit status of the same name on the checked commit: `check / pending`

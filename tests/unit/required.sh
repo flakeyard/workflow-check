@@ -5,19 +5,27 @@
 script=required/run.sh
 attempt_path="repos/o/r/actions/runs/7/attempts/2/jobs?per_page=100"
 
+# The job of the verdict in the jobs of the attempt.
+readonly OWN_JOB='{"name":"check / required","status":"in_progress","conclusion":null}'
 # Jobs of the attempt: the caller's install and this workflow's jobs.
 readonly ATTEMPT_DONE='{"jobs":[
   {"name":"install","status":"completed","conclusion":"success"},
   {"name":"check / pending","status":"completed","conclusion":"skipped"},
   {"name":"check / meta","status":"completed","conclusion":"success"},
-  {"name":"check / required","status":"in_progress","conclusion":null}]}'
+  {"name":"check / flake (x86_64-linux, ubuntu-24.04)","status":"completed","conclusion":"success"},
+  '"$OWN_JOB"']}'
+# check_needs META: the needs of the job required, with meta's result META.
+check_needs() {
+  jq -cn --arg meta "$1" '{pending: {result: "skipped", outputs: {}},
+    meta: {result: $meta, outputs: {}}, flake: {result: "success", outputs: {}}}'
+}
 
 # required_setup: a pull request run whose jobs all succeeded.
 required_setup() {
   setup
   apply RUN_ID=7 RUN_ATTEMPT=2 CHECK_RUN_ID=99 \
     CALLER='{"install":{"result":"success","outputs":{}}}' \
-    CHECK='{"pending":{"result":"skipped","outputs":{}},"meta":{"result":"success","outputs":{}}}' \
+    CHECK="$(check_needs success)" \
     CALLER_MAY_SKIP='[]' CHECK_MAY_SKIP='{"pending":true,"flake":true}'
   fixture "repos/$REPO/actions/jobs/99" '{"name":"check / required"}'
   fixture "$attempt_path" "$ATTEMPT_DONE"
@@ -67,7 +75,7 @@ run "required: a caller job may be skipped" ok "$script"
 finish
 
 required_setup
-apply CHECK='{"pending":{"result":"skipped","outputs":{}},"meta":{"result":"skipped","outputs":{}}}'
+apply CHECK="$(check_needs skipped)"
 run "required: a skipped job of this workflow fails unless it may be skipped" fail "$script"
 expect message "check.meta: skipped"
 finish
@@ -80,7 +88,7 @@ finish
 
 required_setup
 apply CALLER='{"meta":{"result":"failure","outputs":{}}}' CALLER_MAY_SKIP='["meta"]'
-apply CHECK='{"pending":{"result":"skipped","outputs":{}},"meta":{"result":"success","outputs":{}}}'
+apply CHECK="$(check_needs success)"
 run "required: caller and own jobs of one id are told apart" fail "$script"
 expect message "caller.meta: failure"
 expect no-message "check.meta: success,"
@@ -98,7 +106,8 @@ finish
 required_setup
 fixture "$attempt_path" '{"jobs":[
   {"name":"install","status":"completed","conclusion":"success"},
-  {"name":"lint","status":"completed","conclusion":"timed_out"}]}'
+  {"name":"lint","status":"completed","conclusion":"timed_out"},
+  '"$OWN_JOB"']}'
 run "required: a failed job outside needs fails" fail "$script"
 expect message "run.lint: timed_out"
 finish
@@ -108,7 +117,8 @@ for conclusion in skipped neutral; do
   required_setup
   fixture "$attempt_path" '{"jobs":[
     {"name":"install","status":"completed","conclusion":"success"},
-    {"name":"lint","status":"completed","conclusion":"'"$conclusion"'"}]}'
+    {"name":"lint","status":"completed","conclusion":"'"$conclusion"'"},
+    '"$OWN_JOB"']}'
   run "required: a job outside needs that is $conclusion fails" fail "$script"
   expect message "run.lint: $conclusion, not in caller-may-skip"
   finish
@@ -116,29 +126,57 @@ done
 
 required_setup
 apply CALLER='{"install":{"result":"skipped","outputs":{}}}' CALLER_MAY_SKIP='["install"]'
-fixture "$attempt_path" '{"jobs":[{"name":"install","status":"completed","conclusion":"skipped"}]}'
+fixture "$attempt_path" '{"jobs":[{"name":"install","status":"completed","conclusion":"skipped"},
+  '"$OWN_JOB"']}'
 run "required: a job that may be skipped is matched by its name in the attempt" ok "$script"
 expect summary '| `caller.install` | `skipped` |'
 finish
 
 required_setup
 apply CALLER_MAY_SKIP='["lint"]'
-fixture "$attempt_path" '{"jobs":[{"name":"lint (a, b)","status":"completed","conclusion":"skipped"}]}'
+fixture "$attempt_path" '{"jobs":[{"name":"lint (a, b)","status":"completed","conclusion":"skipped"},
+  '"$OWN_JOB"']}'
 run "required: a skipped matrix job is matched without its values" ok "$script"
 finish
 
 required_setup
 apply CALLER_MAY_SKIP='["lint"]'
-fixture "$attempt_path" '{"jobs":[{"name":"Lint","status":"completed","conclusion":"skipped"}]}'
+fixture "$attempt_path" '{"jobs":[{"name":"Lint","status":"completed","conclusion":"skipped"},
+  '"$OWN_JOB"']}'
 run "required: a skipped job named other than its id fails" fail "$script"
 expect message "run.Lint: skipped, not in caller-may-skip"
 finish
 
 required_setup
-fixture "$attempt_path" '{"jobs":[{"name":"install","status":"completed","conclusion":"success"}]}'
+fixture "$attempt_path" '{"jobs":[{"name":"install","status":"completed","conclusion":"success"},
+  '"$OWN_JOB"']}'
 next_page "$attempt_path" 2 '{"jobs":[{"name":"docs","status":"queued","conclusion":null}]}'
 run "required: every page of the attempt is read" fail "$script"
 expect message "run.docs: queued, not in needs of the check job"
+finish
+
+# A caller job whose name starts like the jobs of this workflow.
+for case in 'completed "failure"' 'in_progress null'; do
+  read -r status conclusion <<<"$case"
+  required_setup
+  fixture "$attempt_path" '{"jobs":[
+    {"name":"check / lint","status":"'"$status"'","conclusion":'"$conclusion"'},
+    '"$OWN_JOB"']}'
+  run "required: a caller job named check / lint fails, $status" fail "$script"
+  expect message "run.check / lint: "
+  finish
+done
+
+required_setup
+fixture "$attempt_path" '{"jobs":[]}'
+run "required: the attempt without the job of the verdict fails" fail "$script"
+expect message "run.check / required: missing from the jobs of the attempt"
+finish
+
+required_setup
+apply CHECK_MAY_SKIP='{"pending":true,"lint":true}'
+run "required: check-may-skip names only the needs of required" fail "$script"
+expect message "check-may-skip names jobs that are not in the needs of the job required"
 finish
 
 required_setup
