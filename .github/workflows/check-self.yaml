@@ -91,3 +91,4 @@ jobs:
     with:
       needs: ${{ toJSON(needs) }}
       expect-checks: '["formatting","shell","unit"]'
+      renovate-presets: '["flakeyard/renovate-config"]'
