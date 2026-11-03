@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/flakeyard/workflow-check/compare/v0.1.0...v0.1.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* name flake jobs after the matrix ([#13](https://github.com/flakeyard/workflow-check/issues/13)) ([9febad0](https://github.com/flakeyard/workflow-check/commit/9febad013845b9b254479bef4568e1932f13feec))
+
 ## 0.1.0 (2026-11-03)
 
 
