@@ -1,0 +1,23 @@
+name: Commit status
+description: >-
+  Posts a commit status on the checked commit for a run started by
+  workflow_dispatch, whose check runs do not count for required checks.
+inputs:
+  state:
+    description: pending, success or failure.
+    required: true
+  context:
+    description: The context, from the context action.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.sha }}
+        STATE: ${{ inputs.state }}
+        CONTEXT: ${{ inputs.context }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'
