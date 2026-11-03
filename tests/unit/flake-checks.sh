@@ -15,7 +15,7 @@ flake_setup() {
 
 flake_setup
 run "flake-checks: every check builds" ok "$script"
-expect call 'nix build --no-link --print-build-logs --keep-going .#.checks.x86_64-linux."a" .#.checks.x86_64-linux."b.c"'
+expect call 'nix build --no-update-lock-file --no-link --print-build-logs --keep-going .#.checks.x86_64-linux."a" .#.checks.x86_64-linux."b.c"'
 expect summary '| `a` | built |'
 expect summary '| `b.c` | built |'
 finish
@@ -50,6 +50,21 @@ finish
 flake_setup
 apply NIX_EVAL_ERROR="attribute missing"
 run "flake-checks: an evaluation error fails" fail "$script"
+expect message "the flake . does not evaluate on x86_64-linux"
+expect no-calls
+finish
+
+flake_setup
+apply NIX_EVAL_ERROR="attribute missing" NIX_DECLARED='["x86_64-linux"]'
+run "flake-checks: the flake evaluates before its systems are read" fail "$script"
+expect message "the flake . does not evaluate on x86_64-linux"
+expect no-message "declares the systems"
+finish
+
+flake_setup
+apply NIX_STALE_LOCK=1
+run "flake-checks: a lock file that is out of date fails" fail "$script"
+expect message "requires lock file changes"
 expect message "the flake . does not evaluate on x86_64-linux"
 expect no-calls
 finish
@@ -93,5 +108,5 @@ done
 flake_setup
 apply FLAKE=./dev
 run "flake-checks: a flake below the repository" ok "$script"
-expect call 'nix build --no-link --print-build-logs --keep-going ./dev#.checks.x86_64-linux."a"'
+expect call 'nix build --no-update-lock-file --no-link --print-build-logs --keep-going ./dev#.checks.x86_64-linux."a"'
 finish

@@ -80,9 +80,10 @@ rulesets of the repository. Reference the workflow by full commit SHA, as above.
   Nix builds for the runner's own system, that the systems the flake declares in
   `checks`, `packages`, `apps`, `devShells` and `formatter` are exactly those of
   `systems`, that the flake evaluates (`nix flake check --no-build`) and that it
-  has the checks of `expect-checks`. It then builds every check of its system
-  and lists the result of each in the job summary. With `flake: ""` there are no
-  such jobs.
+  has the checks of `expect-checks`. Nix reads `flake.lock` as committed and
+  never updates it: a lock file that is missing or lacks an input fails. It then
+  builds every check of its system and lists the result of each in the job
+  summary. With `flake: ""` there are no such jobs.
 - **Pull request title.** It follows Conventional Commits:
   `<type>[(<scope>)][!]: <description>`, with a type of `pr-title-types` and a
   scope of lower-case letters, digits and `._/-`. The title is read from the

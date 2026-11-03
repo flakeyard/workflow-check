@@ -1,12 +1,33 @@
 #!/usr/bin/env bash
 # Stub of nix for tests of flake-checks.
 #
-# "config show system" prints $NIX_SYSTEM. "eval --apply EXPR" prints
-# $NIX_DECLARED for the expression of the declared systems and $NIX_CHECKS
-# for the names of the checks. "flake check" fails when $NIX_EVAL_ERROR is
-# set. "build" is appended to $CALLS; it and "path-info" fail for the checks
-# named in $NIX_FAILED, separated by spaces.
+# "config show system" prints $NIX_SYSTEM. Every other command reads the
+# flake and must not write flake.lock: without --no-update-lock-file it fails,
+# and with it, it fails when $NIX_STALE_LOCK is set. "flake check" fails when
+# $NIX_EVAL_ERROR is set. "eval --apply EXPR" fails unless "flake check" ran
+# before, and prints $NIX_DECLARED for the expression of the declared systems
+# and $NIX_CHECKS for the names of the checks. "build" is appended to $CALLS;
+# it and "path-info" fail for the checks named in $NIX_FAILED, separated by
+# spaces.
 set -euo pipefail
+
+readonly NO_LOCK_UPDATE=--no-update-lock-file
+# Created by "flake check" in the fixtures of the test.
+readonly EVALUATED=$FIXTURES/nix-evaluated
+
+# stub_error MESSAGE: fail as the stub, not as Nix.
+stub_error() {
+  echo "stub nix: $1" >&2
+  exit 2
+}
+
+# locked ARG...: the arguments keep flake.lock as it is, and it is up to date.
+locked() {
+  [[ " $* " == *" $NO_LOCK_UPDATE "* ]] || stub_error "$1 without $NO_LOCK_UPDATE: $*"
+  [[ -z ${NIX_STALE_LOCK:-} ]] && return 0
+  echo "error: flake requires lock file changes but they're not allowed due to '$NO_LOCK_UPDATE'" >&2
+  exit 1
+}
 
 # check_name INSTALLABLE: the name of a check in FLAKE#.checks.SYSTEM."NAME".
 check_name() {
@@ -19,36 +40,52 @@ failed() {
   [[ " ${NIX_FAILED:-} " == *" $1 "* ]]
 }
 
+# applied ARG...: the expression after --apply.
+applied() {
+  while (($# > 1)); do
+    if [[ $1 == --apply ]]; then
+      printf '%s\n' "$2"
+      return 0
+    fi
+    shift
+  done
+  stub_error "eval without --apply"
+}
+
 # evaluate EXPR: print the result of an --apply expression.
 evaluate() {
-  case $1 in
+  local expression=$1
+  [[ -e $EVALUATED ]] || stub_error "eval before flake check"
+  case $expression in
     *concatMap*) printf '%s\n' "$NIX_DECLARED" ;;
     *checks*) printf '%s\n' "$NIX_CHECKS" ;;
-    *)
-      echo "stub nix: unknown expression: $1" >&2
-      exit 2
-      ;;
+    *) stub_error "unknown expression: $expression" ;;
   esac
+}
+
+# check_flake: the flake evaluates unless $NIX_EVAL_ERROR is set.
+check_flake() {
+  if [[ -n ${NIX_EVAL_ERROR:-} ]]; then
+    echo "error: $NIX_EVAL_ERROR" >&2
+    exit 1
+  fi
+  touch "$EVALUATED"
+}
+
+# build ARG...: build the installables among ARG.
+build() {
+  local arg
+  echo "nix $*" >>"$CALLS"
+  for arg; do
+    if [[ $arg == *#* ]] && failed "$(check_name "$arg")"; then exit 1; fi
+  done
 }
 
 case "$1 ${2:-}" in
   "config show") printf '%s\n' "$NIX_SYSTEM" ;;
-  "eval --json") evaluate "${5:?}" ;;
-  "flake check")
-    if [[ -n ${NIX_EVAL_ERROR:-} ]]; then
-      echo "error: $NIX_EVAL_ERROR" >&2
-      exit 1
-    fi
-    ;;
-  "build --no-link")
-    echo "nix $*" >>"$CALLS"
-    for installable in "${@:5}"; do
-      if failed "$(check_name "$installable")"; then exit 1; fi
-    done
-    ;;
-  path-info*) ! failed "$(check_name "$2")" ;;
-  *)
-    echo "stub nix: unsupported: $*" >&2
-    exit 2
-    ;;
+  "eval "*) locked "$@" && evaluate "$(applied "$@")" ;;
+  "flake check") locked "$@" && check_flake ;;
+  "build "*) locked "$@" && build "$@" ;;
+  "path-info "*) locked "$@" && ! failed "$(check_name "${@: -1}")" ;;
+  *) stub_error "unsupported: $*" ;;
 esac
