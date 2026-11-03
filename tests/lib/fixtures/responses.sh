@@ -13,6 +13,12 @@ fixture() {
   printf '%s\n' "$body" >"$(fixture_file "$path")"
 }
 
+# transient_failures PATH COUNT: fail the next COUNT GETs of PATH with HTTP 504.
+transient_failures() {
+  local path=$1 count=$2
+  printf '%s\n' "$count" >"$(fixture_file "$path").transient"
+}
+
 # next_page PATH PAGE BODY: answer page PAGE of a paginated GET PATH.
 next_page() {
   local path=$1 page=$2 body=$3

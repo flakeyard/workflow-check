@@ -5,7 +5,8 @@
 # "?", "&" and "=" replaced by "_"; with --paginate, $FIXTURES/<key>.2,
 # <key>.3 and so on are further pages. A missing file is HTTP 404, and a file
 # containing "HTTP 500" is a server error; like gh, errors print the error body
-# on stdout and the message on stderr.
+# on stdout and the message on stderr. While $FIXTURES/<key>.transient holds a
+# count above zero, each GET decrements it and fails with HTTP 504.
 #
 # Other methods and "gh workflow run" are appended to $CALLS and succeed,
 # unless "<METHOD> <PATH> [STATUS]" is listed in $FAIL_ON (one per line), which
@@ -93,6 +94,16 @@ if [[ $method != GET ]]; then
 fi
 
 file=$FIXTURES/$(key "$path")
+# fail_transiently: fail with HTTP 504 while the count of FILE.transient lasts.
+fail_transiently() {
+  local count
+  [[ -f $file.transient ]] || return 0
+  count=$(<"$file.transient")
+  ((count > 0)) || return 0
+  echo $((count - 1)) >"$file.transient"
+  fail 504 "Gateway Timeout"
+}
+fail_transiently
 [[ -f $file ]] || fail 404 "Not Found"
 grep -q 'HTTP 500' "$file" && fail 500 "Server Error"
 

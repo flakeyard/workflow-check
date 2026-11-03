@@ -8,6 +8,9 @@
 set -uo pipefail
 shopt -s globstar
 
+# Retries of the GitHub API do not wait in tests.
+export API_RETRY_DELAY=0
+
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 # shellcheck source=lib/case.sh
 source "$root/tests/lib/case.sh"
