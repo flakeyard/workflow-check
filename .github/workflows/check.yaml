@@ -1,6 +1,8 @@
 # Reusable check workflow. A repository calls it from its check workflow as
 # the last job, with the id check, and passes the results of its other jobs as
-# the input needs. The job required, whose check is "check / required", fails
+# the input needs. It builds the checks of the repository's flake on every
+# system the flake declares, and checks what only the event and the API can
+# tell. The job required, whose check is "check / required", fails
 # unless every job of the run succeeded; on workflow_dispatch the workflow also
 # posts that result as a commit status. Each step's logic lives in
 # .github/actions.
@@ -19,6 +21,36 @@ on:
         description: JSON array of the caller's job ids that may be skipped.
         type: string
         default: "[]"
+      flake:
+        description: >-
+          The flake whose checks are built, "." or a path below the
+          repository, such as ./dev. Empty builds none.
+        type: string
+        default: .
+      systems:
+        description: >-
+          JSON array of {system, runner}: the runner of every system the flake
+          declares, no more and no fewer.
+        type: string
+        default: >-
+          [{"system":"x86_64-linux","runner":"ubuntu-24.04"},
+          {"system":"aarch64-linux","runner":"ubuntu-24.04-arm"}]
+      expect-checks:
+        description: JSON array of check names that the flake must have.
+        type: string
+        default: "[]"
+      extra-substituters:
+        description: Binary caches to use besides cache.nixos.org.
+        type: string
+        default: ""
+      extra-trusted-public-keys:
+        description: Public keys of the extra caches.
+        type: string
+        default: ""
+      timeout-minutes:
+        description: Timeout of each job that builds the flake checks.
+        type: number
+        default: 60
       pr-title:
         description: >-
           Check that pull request titles follow Conventional Commits. false
@@ -102,8 +134,34 @@ jobs:
           enabled: ${{ inputs.release-tags }}
           allow-unpinned: ${{ inputs.allow-unpinned }}
 
+  flake:
+    name: flake (${{ matrix.system }})
+    if: ${{ !cancelled() && inputs.flake != '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.systems) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read # the flake
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: flakeyard/action-setup-nix@a90eeb051e85033f5d3c3e40dd213a585f34ec8d # v0.1.1
+        with:
+          extra-substituters: ${{ inputs.extra-substituters }}
+          extra-trusted-public-keys: ${{ inputs.extra-trusted-public-keys }}
+      - uses: $/.github/actions/flake-checks
+        with:
+          flake: ${{ inputs.flake }}
+          system: ${{ matrix.system }}
+          systems: ${{ inputs.systems }}
+          expect-checks: ${{ inputs.expect-checks }}
+
   required:
-    needs: [pending, meta]
+    needs: [pending, meta, flake]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -119,7 +177,8 @@ jobs:
           caller-may-skip: ${{ inputs.caller-may-skip }}
           # The jobs above that the event or the inputs skip.
           check-may-skip: >-
-            {"pending": ${{ github.event_name != 'workflow_dispatch' }}}
+            {"pending": ${{ github.event_name != 'workflow_dispatch' }},
+            "flake": ${{ inputs.flake == '' }}}
           check-run-id: ${{ job.check_run_id }}
       # A dispatched run reports its result on every outcome.
       - id: context

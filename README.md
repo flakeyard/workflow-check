@@ -25,6 +25,8 @@ referenced with `$/`:
   preset of the given repositories;
 - `release-tags`: every Renovate preset and Copier template is pinned to the tag
   of an immutable GitHub release;
+- `flake-checks`: the flake evaluates and its checks build natively, on runners
+  for exactly the systems it declares;
 - `context`: the context of the commit status, from the name of the job that
   runs it, read through `job.check_run_id`;
 - `commit-status`: the commit status of a run started by `workflow_dispatch`;
@@ -40,23 +42,26 @@ calls the GitHub API (`api.sh`, which tells a missing resource from an error,
 reports errors, warnings, notices and lines of the job summary, escaping the
 text it is given.
 
-`tests/run.sh` tests the scripts with the stub of `gh` in `tests/bin`; the
-suites in `tests/unit` mirror the actions and the helpers and share the helpers
-in `tests/lib`. `tests/unit/workflows/check.sh` checks the jobs of the workflow:
-their permissions, references, conditions and which of them may be skipped;
-`tests/unit/workflows/check-self.sh` checks that the repository's own CI calls
-the workflow as every caller must. They read the workflows with mikefarah `yq`
-v4, which GitHub-hosted runners have, and fail without it; locally, run
-`nix shell nixpkgs#yq-go -c tests/run.sh`.
+`tests/run.sh` tests the scripts with the stubs of `gh` and `nix` in
+`tests/bin`; the suites in `tests/unit` mirror the actions and the helpers and
+share the helpers in `tests/lib`. `tests/unit/workflows/check.sh` checks the
+jobs of the workflow: their permissions, references, conditions and which of
+them may be skipped; `tests/unit/workflows/check-self.sh` checks that the
+repository's own CI calls the workflow as every caller must. They read the
+workflows with mikefarah `yq` v4, which GitHub-hosted runners have, and fail
+without it; locally, run `nix shell nixpkgs#yq-go -c tests/run.sh`.
 
 The repository checks itself with
 [`check-self.yaml`](.github/workflows/check-self.yaml), which calls the workflow
 of the same commit through `$/`, so a pull request is checked by its own
-version. The flake of the repository runs the tests as `checks.unit`, and checks
-the scripts with shellcheck and shfmt (`checks.shell`) and the Nix files with
-nixfmt (`checks.formatting`). Before a pull request, run `nix flake check`,
-actionlint, zizmor, prettier, markdownlint, typos and `reuse lint`; actionlint
-does not yet know the `$/` syntax and reports it as an error.
+version. Its job `fixtures` runs `flake-checks` on the flakes in
+`tests/fixtures/flakes`; the step may fail, and the next step checks that it
+failed exactly for the fixtures that must fail, so the run stays green. The
+flake of the repository runs the tests as `checks.unit`, and checks the scripts
+with shellcheck and shfmt (`checks.shell`) and the Nix files with nixfmt
+(`checks.formatting`). Before a pull request, run `nix flake check`, actionlint,
+zizmor, prettier, markdownlint, typos and `reuse lint`; actionlint does not yet
+know the `$/` syntax and reports it as an error.
 
 ## Bootstrap
 

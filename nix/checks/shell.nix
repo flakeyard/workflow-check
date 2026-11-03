@@ -15,7 +15,7 @@
           }
           ''
             cd ${sources}
-            scripts=$(find . -name '*.sh' -o -path ./tests/bin/gh)
+            scripts=$(find . -name '*.sh' -o -path './tests/bin/*')
             shellcheck -x $scripts
             shfmt -d -i 2 -ci -bn $scripts
             touch $out

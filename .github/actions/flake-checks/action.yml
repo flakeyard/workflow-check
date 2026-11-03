@@ -1,0 +1,27 @@
+name: Flake checks
+description: >-
+  Evaluates a flake and builds its checks for the system of the runner, after
+  checking that the runners given cover exactly the systems the flake declares.
+inputs:
+  flake:
+    description: The flake, "." or a relative path such as ./dev.
+    required: true
+  system:
+    description: The system of this runner, such as x86_64-linux.
+    required: true
+  systems:
+    description: JSON array of {system, runner}, every system the checks run on.
+    required: true
+  expect-checks:
+    description: JSON array of check names that the flake must have.
+    default: "[]"
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        FLAKE: ${{ inputs.flake }}
+        SYSTEM: ${{ inputs.system }}
+        SYSTEMS: ${{ inputs.systems }}
+        EXPECT_CHECKS: ${{ inputs.expect-checks }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'

@@ -1,5 +1,6 @@
-# CI of this repository: its own jobs, then the product workflow of the pull
-# request itself, called as every repository calls it.
+# CI of this repository: the actions on fixtures that must pass or fail, then
+# the product workflow of the pull request itself, called as every repository
+# calls it, which also builds the checks of the repository's flake.
 name: check-self
 
 on:
@@ -21,20 +22,60 @@ concurrency:
         && github.event.action != 'edited' }}
 
 jobs:
-  unit:
-    name: Unit tests
+  # The flake checks of fixtures that must pass or fail, on x86_64-linux;
+  # the repository's own flake is checked by the call below.
+  fixtures:
+    name: Fixture ${{ matrix.case }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: pass
+            fixture: pass
+            expect-checks: '["ok"]'
+            outcome: success
+          - case: failing-check
+            fixture: failing-check
+            expect-checks: "[]"
+            outcome: failure
+          - case: missing-check
+            fixture: pass
+            expect-checks: '["ok","missing"]'
+            outcome: failure
+          - case: eval-error
+            fixture: eval-error
+            expect-checks: "[]"
+            outcome: failure
+          - case: undeclared-system
+            fixture: undeclared-system
+            expect-checks: "[]"
+            outcome: failure
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: tests/run.sh
+      - uses: flakeyard/action-setup-nix@a90eeb051e85033f5d3c3e40dd213a585f34ec8d # v0.1.1
+      - id: flake-checks
+        continue-on-error: true
+        uses: $/.github/actions/flake-checks
+        with:
+          flake: ./tests/fixtures/flakes/${{ matrix.fixture }}
+          system: x86_64-linux
+          systems: >-
+            [{"system":"x86_64-linux","runner":"ubuntu-24.04"},
+            {"system":"aarch64-linux","runner":"ubuntu-24.04-arm"}]
+          expect-checks: ${{ matrix.expect-checks }}
+      - env:
+          OUTCOME: ${{ steps.flake-checks.outcome }}
+          EXPECTED: ${{ matrix.outcome }}
+        run: tests/ci/outcome.sh
 
   check:
-    needs: [unit]
+    needs: [fixtures]
     # Dispatched runs post their final status on every outcome.
     if: ${{ !cancelled() || github.event_name == 'workflow_dispatch' }}
     uses: $/.github/workflows/check.yaml
@@ -45,3 +86,4 @@ jobs:
       statuses: write # commit statuses of dispatched runs
     with:
       needs: ${{ toJSON(needs) }}
+      expect-checks: '["formatting","shell","unit"]'

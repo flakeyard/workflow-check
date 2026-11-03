@@ -5,7 +5,7 @@
 # skipped.
 
 # The jobs of the workflow, sorted.
-readonly CHECK_JOBS='["meta","pending","required"]'
+readonly CHECK_JOBS='["flake","meta","pending","required"]'
 # The permissions the caller grants; no job may ask for more.
 readonly CHECK_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":"read","statuses":"write"}'
 # The checks of meta that an input switches, in their order.
@@ -31,8 +31,13 @@ if require_yq check.yaml; then
   check_test "no secrets and no environment" \
     '(.on.workflow_call | has("secrets") | not) and ([.jobs[] | select(has("environment"))] == [])
     and ([.. | strings | select(contains("secrets."))] == [])'
-  check_test "no job checks out code" \
-    '[steps[] | .uses // empty | select(test("actions/checkout"))] == []'
+  check_test "only flake checks out code, without credentials" \
+    '[.jobs | to_entries[] | select(.value.steps | any(.uses // "" | test("actions/checkout"))) | .key] == ["flake"]
+    and ([.jobs.flake.steps[] | select(.uses | test("actions/checkout")) | .with["persist-credentials"]] == [false])'
+  check_test "flake gets no token" \
+    '[.jobs.flake | .. | strings | select(test("token"; "i"))] == []'
+  check_test "flake runs unless cancelled, when there is a flake" \
+    '.jobs.flake | condition == "${{ !cancelled() && inputs.flake != '"''"' }}"'
   check_test "needs is a required input without a default" \
     '.on.workflow_call.inputs.needs | .required == true and (has("default") | not)'
   check_test "required needs every other job and always runs" \
@@ -42,7 +47,7 @@ if require_yq check.yaml; then
     ".jobs.pending | condition == \"\${{ $DISPATCHED }}\""
   check_test "the verdict lets exactly the skipped jobs be skipped" \
     "[.jobs.required.steps[] | select(.id == \"verdict\") | .with[\"check-may-skip\"]]
-    == [\"{\\\"pending\\\": \${{ github.event_name != 'workflow_dispatch' }}}\"]"
+    == [\"{\\\"pending\\\": \${{ github.event_name != 'workflow_dispatch' }}, \\\"flake\\\": \${{ inputs.flake == '' }}}\"]"
   check_test "only dispatched runs post commit statuses" \
     "[.jobs[] | select(condition != \"\${{ $DISPATCHED }}\") | .steps[]
     | select(.uses == \"\$/.github/actions/commit-status\") | condition
