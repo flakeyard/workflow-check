@@ -1,0 +1,9 @@
+name: Preflight
+description: Fails unless the caller's event is one that the check workflow supports.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        EVENT: ${{ github.event_name }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'

@@ -1,0 +1,82 @@
+# Reusable check workflow. A repository calls it from its check workflow as
+# the last job, with the id check, and passes the results of its other jobs as
+# the input needs. The job required, whose check is "check / required", fails
+# unless every job of the run succeeded; on workflow_dispatch the workflow also
+# posts that result as a commit status. Each step's logic lives in
+# .github/actions.
+name: check
+
+on:
+  workflow_call:
+    inputs:
+      needs:
+        description: >-
+          The results of the caller's other jobs: toJSON(needs) of the job that
+          calls this workflow, also when it has no needs.
+        type: string
+        required: true
+      caller-may-skip:
+        description: JSON array of the caller's job ids that may be skipped.
+        type: string
+        default: "[]"
+
+permissions: {}
+
+jobs:
+  pending:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read # the name of this job
+      statuses: write # the commit status of a dispatched run
+    steps:
+      - id: context
+        uses: $/.github/actions/context
+        with:
+          check-run-id: ${{ job.check_run_id }}
+      - uses: $/.github/actions/commit-status
+        with:
+          state: pending
+          context: ${{ steps.context.outputs.context }}
+
+  meta:
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read # repository files through the contents API
+      pull-requests: read # the title of the pull request
+    steps:
+      - uses: $/.github/actions/preflight
+
+  required:
+    needs: [pending, meta]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read # the name of this job and the jobs of the run
+      statuses: write # the commit status of a dispatched run
+    steps:
+      - id: verdict
+        uses: $/.github/actions/required
+        with:
+          caller: ${{ inputs.needs }}
+          check: ${{ toJSON(needs) }}
+          caller-may-skip: ${{ inputs.caller-may-skip }}
+          # The jobs above that the event or the inputs skip.
+          check-may-skip: >-
+            {"pending": ${{ github.event_name != 'workflow_dispatch' }}}
+          check-run-id: ${{ job.check_run_id }}
+      # A dispatched run reports its result on every outcome.
+      - id: context
+        if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+        uses: $/.github/actions/context
+        with:
+          check-run-id: ${{ job.check_run_id }}
+      - if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+        uses: $/.github/actions/commit-status
+        with:
+          state: ${{ steps.verdict.outcome == 'success' && 'success' || 'failure' }}
+          context: ${{ steps.context.outputs.context }}

@@ -1,0 +1,47 @@
+# CI of this repository: its own jobs, then the product workflow of the pull
+# request itself, called as every repository calls it.
+name: check-self
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited] # edited: the title check
+  push:
+    branches: [main, "release/v*"]
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch: # dispatched checks of release pull requests (FY-0030)
+
+permissions: {}
+
+concurrency:
+  group: check-self-${{ github.ref }}
+  # A title or description edit must not cancel a long run.
+  cancel-in-progress: >-
+    ${{ github.event_name == 'pull_request'
+        && github.event.action != 'edited' }}
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: tests/run.sh
+
+  check:
+    needs: [unit]
+    # Dispatched runs post their final status on every outcome.
+    if: ${{ !cancelled() || github.event_name == 'workflow_dispatch' }}
+    uses: $/.github/workflows/check.yaml
+    permissions:
+      actions: read # own job name and the jobs of the run
+      contents: read # repository files through the contents API
+      pull-requests: read # the title of the pull request
+      statuses: write # commit statuses of dispatched runs
+    with:
+      needs: ${{ toJSON(needs) }}
