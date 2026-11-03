@@ -22,6 +22,8 @@ if require_yq check.yaml; then
     ".jobs | keys == $CHECK_JOBS"
   check_test "no job asks for more than the documented permissions" \
     "[.jobs[] | .permissions | to_entries[] | select(${CHECK_PERMISSIONS}[.key] != .value)] == []"
+  check_test "matrix job names need no expression" \
+    '[.jobs[] | select(has("strategy")) | .name // empty] == []'
   check_test "every job has a timeout" \
     '[.jobs[] | select(has("timeout-minutes") | not)] == []'
   check_test "no expression inside run" \
