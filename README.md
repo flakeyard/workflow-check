@@ -238,7 +238,14 @@ zizmor, prettier, markdownlint, typos and `reuse lint`; actionlint does not yet
 know the `$/` syntax and reports it as an error. The repository releases itself
 with [workflow-release](https://github.com/flakeyard/workflow-release) through
 [`release.yaml`](.github/workflows/release.yaml), whose release pull requests
-are checked by a dispatched run of `check-self.yaml`. The design follows
+are checked by a dispatched run of `check-self.yaml`. The weekly workflow
+[`maintenance.yaml`](.github/workflows/maintenance.yaml), which is not a
+required check, runs `nix run .#check-eol -- nixpkgs-eol`
+([`scripts/check/eol.sh`](scripts/check/eol.sh)): it warns from 30 days before
+the end of life of the nixpkgs branch in `nixpkgs-eol` and fails after it,
+following
+[FY-0026](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0026-stable-nixpkgs.md).
+The design follows
 [FY-0031](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0031-check-pull-requests-and-pushes-with-workflow-check.md),
 [FY-0009](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0009-ci-on-runners.md)
 and

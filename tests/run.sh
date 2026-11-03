@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Unit tests of the scripts in .github/actions, with a stub of gh. The suites
 # in tests/unit mirror the actions: one file per action, and one per helper
-# under tests/unit/lib; tests/unit/workflows has one file per workflow and
-# needs yq.
+# under tests/unit/lib; tests/unit/scripts has one file per script of
+# scripts/; tests/unit/workflows has one file per workflow and needs yq.
 # Usage: tests/run.sh
 # shellcheck source-path=SCRIPTDIR
 set -uo pipefail
