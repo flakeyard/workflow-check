@@ -1,0 +1,23 @@
+name: Release tags
+description: >-
+  Fails unless every Renovate preset and Copier template that the repository
+  references is pinned to the tag of an immutable GitHub release.
+inputs:
+  enabled:
+    description: "'false' switches the check off; it then succeeds with a notice."
+    default: "true"
+  allow-unpinned:
+    description: >-
+      JSON array of owner/repo whose presets and templates are not checked.
+    default: "[]"
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.sha }}
+        ENABLED: ${{ inputs.enabled }}
+        ALLOW_UNPINNED: ${{ inputs.allow-unpinned }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'

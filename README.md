@@ -23,6 +23,8 @@ referenced with `$/`:
   dispatched branch, read from the API;
 - `renovate-config`: `renovate.json`, the only Renovate configuration, extends a
   preset of the given repositories;
+- `release-tags`: every Renovate preset and Copier template is pinned to the tag
+  of an immutable GitHub release;
 - `context`: the context of the commit status, from the name of the job that
   runs it, read through `job.check_run_id`;
 - `commit-status`: the commit status of a run started by `workflow_dispatch`;

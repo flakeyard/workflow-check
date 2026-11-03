@@ -42,6 +42,19 @@ on:
           empty allows any preset.
         type: string
         default: "[]"
+      release-tags:
+        description: >-
+          Check that every Renovate preset and Copier template is pinned to
+          the tag of an immutable GitHub release. false switches the check
+          off; it then succeeds with a notice.
+        type: boolean
+        default: true
+      allow-unpinned:
+        description: >-
+          JSON array of owner/repo whose presets and templates release-tags
+          does not check.
+        type: string
+        default: "[]"
 
 permissions: {}
 
@@ -83,6 +96,11 @@ jobs:
         with:
           enabled: ${{ inputs.renovate-config }}
           presets: ${{ inputs.renovate-presets }}
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/release-tags
+        with:
+          enabled: ${{ inputs.release-tags }}
+          allow-unpinned: ${{ inputs.allow-unpinned }}
 
   required:
     needs: [pending, meta]
