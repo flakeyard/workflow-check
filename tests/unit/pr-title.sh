@@ -23,12 +23,21 @@ done
 
 # Titles that do not.
 for title in "Add a check" "feature: add" "feat:add" "feat:  add" "feat(Scope): add" \
-  "feat(): add" "Feat: add" "feat :add" "featx: add" "feat(a)(b): add" "feat: "; do
+  "feat(): add" "Feat: add" "feat :add" "featx: add" "feat(a)(b): add" "feat: " \
+  "chore(méin): release 0.2.0"; do
   title_setup "$title"
   run "pr-title: rejects '$title'" fail "$script"
   expect message "pull request #5: the title"
   finish
 done
+
+if has_wide_ranges; then
+  title_setup "chore(méin): release 0.2.0"
+  apply LC_ALL="$WIDE_LOCALE"
+  run "pr-title: rejects a scope beyond ASCII in $WIDE_LOCALE" fail "$script"
+  expect message "pull request #5: the title"
+  finish
+fi
 
 title_setup $'feat: one\n::warning::forged'
 run "pr-title: a title cannot forge a command" fail "$script"
