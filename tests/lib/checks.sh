@@ -53,6 +53,7 @@ expect() {
     no-calls) [[ ! -s $CALLS ]] || report "unexpected calls: $(paste -sd';' "$CALLS")" ;;
     message) grep -qF -- "$2" "$work/stdout" "$work/stderr" || report "no message '$2' in: $(cat "$work/stdout" "$work/stderr")" ;;
     no-message) ! grep -qF -- "$2" "$work/stdout" "$work/stderr" || report "unexpected message '$2'" ;;
+    no-command) ! grep -q -- "^::$2::" "$work/stdout" || report "unexpected command ::$2::" ;;
     summary) grep -qF -- "$2" "$GITHUB_STEP_SUMMARY" || report "no '$2' in the summary: $(cat "$GITHUB_STEP_SUMMARY")" ;;
   esac
 }

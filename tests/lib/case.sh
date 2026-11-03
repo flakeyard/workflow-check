@@ -8,6 +8,7 @@ failed=0 passed=0 current=""
 # The variables that action scripts read, unset before every test.
 readonly SCRIPT_VARIABLES=(
   EVENT FAIL_ON CHECK_RUN_ID STATE CONTEXT RUN_URL
+  RUN_ID RUN_ATTEMPT CALLER CHECK CALLER_MAY_SKIP CHECK_MAY_SKIP
 )
 
 # setup: fresh fixtures, calls, outputs and environment for one test.
