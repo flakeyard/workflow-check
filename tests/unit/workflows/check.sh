@@ -8,6 +8,8 @@
 readonly CHECK_JOBS='["meta","pending","required"]'
 # The permissions the caller grants; no job may ask for more.
 readonly CHECK_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":"read","statuses":"write"}'
+# The checks of meta that an input switches, in their order.
+readonly SWITCHED_CHECKS='["pr-title"]'
 readonly DISPATCHED="github.event_name == 'workflow_dispatch'"
 
 # check_test NAME FILTER: FILTER is true of check.yaml.
@@ -48,4 +50,10 @@ if require_yq check.yaml; then
   check_test "the final status is posted on every outcome" \
     "[.jobs.required.steps[] | select(.uses == \"\$/.github/actions/commit-status\" or .id == \"context\") | condition]
     | length == 2 and all(startswith(\"\${{ always() && \"))"
+  check_test "every check of meta runs also when another one failed" \
+    '.jobs.meta.steps[1:] | all(condition == "${{ !cancelled() }}")'
+  check_test "every check of meta is switched by a boolean input, true by default" \
+    "$SWITCHED_CHECKS"' as $names
+    | [.jobs.meta.steps[] | .with.enabled // empty] == [$names[] | "${{ inputs.\(.) }}"]
+    and ([.on.workflow_call.inputs[$names[]] | .type == "boolean" and .default == true] | all)'
 fi

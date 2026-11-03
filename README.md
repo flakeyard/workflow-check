@@ -19,6 +19,8 @@ only composes steps. Each step's logic is a small composite action in
 referenced with `$/`:
 
 - `preflight`: the event of the caller, from a list of supported events;
+- `pr-title`: the title of the pull request, or of every open pull request of a
+  dispatched branch, read from the API;
 - `context`: the context of the commit status, from the name of the job that
   runs it, read through `job.check_run_id`;
 - `commit-status`: the commit status of a run started by `workflow_dispatch`;
