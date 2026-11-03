@@ -28,7 +28,7 @@ finish
 
 tags_setup '{"extends":["github>flakeyard/renovate-config#v0.1.0"],"packageRules":[{"extends":["github>flakeyard/renovate-config:x#v0.2.0"]}]}'
 run "release-tags: every extends is checked" fail "$script"
-expect message "preset github>flakeyard/renovate-config:x#v0.2.0: flakeyard/renovate-config has no release v0.2.0"
+expect message "preset github>flakeyard/renovate-config:x#v0.2.0: flakeyard/renovate-config has no release v0.2.0 that GITHUB_TOKEN can read"
 finish
 
 tags_setup '{"extends":["github>flakeyard/renovate-config#v0.1.0"]}'
@@ -57,6 +57,25 @@ done
 tags_setup '{"extends":["github>../x#v1.0.0"]}'
 run "release-tags: rejects a hostile repository" fail "$script"
 expect message "not a GitHub repository: ../x"
+finish
+
+# A repository name of dots only would change the path of the API call.
+for repository in "owner/.." "owner/."; do
+  tags_setup "$(jq -n --arg preset "github>$repository#v1.0.0" '{extends: [$preset]}')"
+  run "release-tags: rejects the preset of $repository" fail "$script"
+  expect message "not a GitHub repository: $repository"
+  finish
+
+  tags_setup '{"extends":[]}'
+  answers_setup .copier-answers.yml "$(printf '%s\n' "_commit: v1.0.0" "_src_path: gh:$repository")"
+  run "release-tags: rejects the template gh:$repository" fail "$script"
+  expect message "not a GitHub repository: $repository"
+  finish
+done
+
+tags_setup '{"extends":["github>owner/.github#v1.0.0"]}'
+fixture "repos/owner/.github/releases/tags/v1.0.0" '{"immutable":true}'
+run "release-tags: a preset of owner/.github" ok "$script"
 finish
 
 tags_setup '{"extends":["github>someone/presets","local>someone/presets"]}'

@@ -149,6 +149,10 @@ The calling job must grant `actions: read`, `contents: read`,
 - `statuses`: commit statuses of dispatched runs. In pull requests from forks,
   the token is read-only; statuses are posted only on `workflow_dispatch`.
 
+The release tag check reads releases with the same token, so it sees only the
+repositories the token can read: a release of a private repository of another
+owner reads as missing.
+
 ## Behaviour
 
 - **Events.** `pull_request`, `push`, `schedule` and `workflow_dispatch`; any
@@ -207,10 +211,10 @@ referenced with `$/`:
 The actions run their `run.sh` and source the helpers in `lib`: `lib/github/`
 calls the GitHub API (`api.sh`, which tells a missing resource from an error,
 `contents.sh`, which reads repository files at the checked commit, and
-`jobs.sh`, which reads the name of a job and the jobs of a run attempt),
-`lib/renovate.sh` reads presets of a Renovate configuration, and `lib/report.sh`
-reports errors, warnings, notices and lines of the job summary, escaping the
-text it is given.
+`jobs.sh`, which reads the name of a job and the jobs of a run attempt) and
+holds the form of repository names (`repository.sh`), `lib/renovate.sh` reads
+presets of a Renovate configuration, and `lib/report.sh` reports errors,
+warnings, notices and lines of the job summary, escaping the text it is given.
 
 `tests/run.sh` tests the scripts with the stubs of `gh` and `nix` in
 `tests/bin`; the suites in `tests/unit` mirror the actions and the helpers and

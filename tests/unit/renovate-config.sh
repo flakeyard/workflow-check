@@ -85,7 +85,7 @@ fixture "repos/$REPO/contents/renovate.json?ref=$SHA" '[{"type":"file","name":"x
 run "renovate-config: a directory is not a configuration" fail "$script"
 finish
 
-for presets in '"flakeyard/renovate-config"' '["../x"]' '["flakeyard"]' ''; do
+for presets in '"flakeyard/renovate-config"' '["../x"]' '["flakeyard/.."]' '["flakeyard"]' ''; do
   renovate_setup "$FLAKEYARD_CONFIG"
   apply PRESETS="$presets"
   run "renovate-config: rejects the presets $presets" fail "$script"
