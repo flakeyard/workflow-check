@@ -110,7 +110,9 @@ off by its input succeeds with a notice.
 
 - `needs` (required): `toJSON(needs)` of the calling job.
 - `caller-may-skip` (default `[]`): JSON array of the ids of the caller's jobs
-  that may be skipped; any other skipped job fails `required`.
+  that may be skipped; any other skipped job fails `required`. The jobs of the
+  run are matched to these ids by name, so a job that may be skipped has no
+  `name:`.
 - `flake` (default `.`): the flake whose checks are built, `.` or a path below
   the repository, such as `./dev`. `""` builds none.
 - `systems` (default x86_64-linux on `ubuntu-24.04` and aarch64-linux on
@@ -156,9 +158,9 @@ The calling job must grant `actions: read`, `contents: read`,
   and of the workflow are told apart (`caller.<id>` and `check.<id>`), so a
   caller job may have the id of a job of the workflow. It also reads the jobs of
   the run attempt: a job outside `check / *` that has not completed is missing
-  from `needs`, and one that failed fails `required`, listed or not. After
-  **Re-run failed jobs**, the attempt lists every job, the reused ones with
-  their earlier result.
+  from `needs`, and one that failed, or was skipped and may not be, fails
+  `required`, listed or not. After **Re-run failed jobs**, the attempt lists
+  every job, the reused ones with their earlier result.
 - **Dispatched runs.** Check runs of runs started by `workflow_dispatch` do not
   count for the required checks of a pull request, so such runs post the result
   as a commit status of the same name on the checked commit: `check / pending`

@@ -2,9 +2,9 @@
 # Fails unless every job in CALLER and CHECK, the needs of the caller job and
 # of this job, succeeded or is allowed to be skipped by CALLER_MAY_SKIP and
 # CHECK_MAY_SKIP, and every job of attempt RUN_ATTEMPT of run RUN_ID outside
-# this workflow has completed without failing. A job that has not completed is
-# missing from the needs of the caller job. Writes a table of the jobs to the
-# job summary.
+# this workflow has completed and succeeded, or was skipped and may be. A job
+# that has not completed is missing from the needs of the caller job. Writes a
+# table of the jobs to the job summary.
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
 shopt -s inherit_errexit
