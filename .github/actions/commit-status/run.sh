@@ -3,6 +3,8 @@
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
 shopt -s inherit_errexit
+# Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
+export LC_ALL=C.UTF-8
 : "${REPO:?}" "${SHA:?}" "${STATE?}" "${CONTEXT?}" "${RUN_URL:?}"
 lib=$(dirname "$0")/../lib
 # shellcheck source=../lib/report.sh

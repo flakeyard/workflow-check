@@ -73,6 +73,14 @@ for repository in "owner/.." "owner/."; do
   finish
 done
 
+if has_wide_ranges; then
+  tags_setup '{"extends":["github>öwner/répo#v1.0.0"]}'
+  apply LC_ALL="$WIDE_LOCALE"
+  run "release-tags: rejects a repository beyond ASCII in $WIDE_LOCALE" fail "$script"
+  expect message "not a GitHub repository: öwner/répo"
+  finish
+fi
+
 tags_setup '{"extends":["github>owner/.github#v1.0.0"]}'
 fixture "repos/owner/.github/releases/tags/v1.0.0" '{"immutable":true}'
 run "release-tags: a preset of owner/.github" ok "$script"

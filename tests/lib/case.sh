@@ -9,10 +9,19 @@ failed=0 passed=0 current=""
 readonly SCRIPT_VARIABLES=(
   EVENT FAIL_ON CHECK_RUN_ID STATE CONTEXT RUN_URL
   RUN_ID RUN_ATTEMPT CALLER CHECK CALLER_MAY_SKIP CHECK_MAY_SKIP
-  NUMBER OWNER BRANCH ENABLED TYPES PRESETS ALLOW_UNPINNED
+  NUMBER OWNER BRANCH ENABLED TYPES PRESETS ALLOW_UNPINNED LC_ALL
   FLAKE SYSTEM SYSTEMS EXPECT_CHECKS
   NIX_SYSTEM NIX_DECLARED NIX_CHECKS NIX_EVAL_ERROR NIX_FAILED NIX_STALE_LOCK
 )
+
+# A locale in which ranges such as [a-z] match letters beyond ASCII, such as
+# é: the action scripts must not depend on the locale of the runner.
+readonly WIDE_LOCALE=en_US.UTF-8
+
+# has_wide_ranges: the system has WIDE_LOCALE, and [a-z] matches é in it.
+has_wide_ranges() {
+  LC_ALL=$WIDE_LOCALE bash -c '[[ é =~ ^[a-z]$ ]]' 2>/dev/null
+}
 
 # setup: fresh fixtures, calls, outputs and environment for one test.
 setup() {
