@@ -25,6 +25,8 @@ if require_yq check-self.yaml; then
     ".jobs.check | condition == \"$CALLER_CONDITION\""
   self_test "check gets the permissions of the product workflow" \
     ".jobs.check.permissions == $CALLER_PERMISSIONS"
+  self_test "renovate.json extends the presets of the organization" \
+    '.jobs.check.with["renovate-presets"] | fromjson == ["flakeyard/renovate-config"]'
   self_test "an edit of a pull request cancels no run" \
     '.concurrency["cancel-in-progress"] | contains("github.event.action != '"'edited'"'")'
   self_test "dispatched and edited pull requests are checked" \
