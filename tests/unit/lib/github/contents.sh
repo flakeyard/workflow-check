@@ -9,6 +9,20 @@ run_lib "contents: a file is decoded" ok "$lib" file_at a.json "$SHA"
 expect stdout $'{\n  "a": 1\n}'
 finish
 
+# File names that are not a path of a URL as they are.
+while IFS='|' read -r name encoded; do
+  setup
+  file_fixture "$encoded" "x"
+  run_lib "contents: the name '$name' is encoded" ok "$lib" file_at "$name" "$SHA"
+  expect stdout "x"
+  finish
+done <<'CASES'
+.copier-answers#x.yml|.copier-answers%23x.yml
+.copier-answers?x.yml|.copier-answers%3Fx.yml
+.copier answers.yml|.copier%20answers.yml
+.github/renovate.json|.github/renovate.json
+CASES
+
 # missing_is_not_found: file_at returns NOT_FOUND for a missing file.
 missing_is_not_found() {
   local status=0
