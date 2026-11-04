@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.2](https://github.com/flakeyard/workflow-check/compare/v0.1.1...v0.1.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* encode file names in paths of the contents API ([#21](https://github.com/flakeyard/workflow-check/issues/21)) ([ce4eb48](https://github.com/flakeyard/workflow-check/commit/ce4eb48906e2bb5bb30d806592a5e9ac5f4086a6))
+* fail on a skipped job that is missing from needs ([#17](https://github.com/flakeyard/workflow-check/issues/17)) ([20b96d1](https://github.com/flakeyard/workflow-check/commit/20b96d1968fe8bb0b5f990e9256c7f842b49ae19))
+* keep flake.lock as committed in the flake checks ([#16](https://github.com/flakeyard/workflow-check/issues/16)) ([88944db](https://github.com/flakeyard/workflow-check/commit/88944db97fb231efe66b9053b9df67a99448c539))
+* match names in ASCII whatever the locale ([#20](https://github.com/flakeyard/workflow-check/issues/20)) ([f4255ca](https://github.com/flakeyard/workflow-check/commit/f4255ca2b08364a709f05b82cf2b43acb597ffa8))
+* reject repository names of dots only ([#19](https://github.com/flakeyard/workflow-check/issues/19)) ([9870a57](https://github.com/flakeyard/workflow-check/commit/9870a57cf25b525c2e1ec87753c87756d0a8a030))
+* retry GitHub API requests that fail transiently ([#25](https://github.com/flakeyard/workflow-check/issues/25)) ([0a8f83a](https://github.com/flakeyard/workflow-check/commit/0a8f83ac401e20181e944f898ee6a21e957253e1))
+* tell the jobs of the check workflow by their ids ([#18](https://github.com/flakeyard/workflow-check/issues/18)) ([b2017f4](https://github.com/flakeyard/workflow-check/commit/b2017f4e21f42b81d413f22064616fe7f5ffb86b))
+
 ## [0.1.1](https://github.com/flakeyard/workflow-check/compare/v0.1.0...v0.1.1) (2026-11-03)
 
 
