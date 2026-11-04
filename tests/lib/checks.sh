@@ -23,6 +23,15 @@ run() {
   outcome "$name" "$expected" "$status"
 }
 
+# run_script NAME EXPECTED SCRIPT [ARG...]: run a script of scripts/;
+# EXPECTED is ok or fail.
+run_script() {
+  local name=$1 expected=$2 script=$3 status=0
+  shift 3
+  "$root/scripts/$script" "$@" >"$work/stdout" 2>"$work/stderr" || status=$?
+  outcome "$name" "$expected" "$status"
+}
+
 # run_lib NAME EXPECTED LIB FUNCTION [ARG...]: run a function of the helper
 # lib/LIB in a subshell; EXPECTED is ok or fail.
 run_lib() {
