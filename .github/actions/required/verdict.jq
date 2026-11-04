@@ -4,8 +4,9 @@
 # Arguments: $caller and $check, needs as JSON; $caller_may_skip, an array of
 # job ids, which are also the names of those jobs in the attempt;
 # $check_may_skip, an object of job ids and whether they may be skipped; $jobs,
-# the jobs of the attempt; $prefix, what the caller job puts before the names
-# of the jobs of this workflow, such as "check / ".
+# the jobs of the attempt; $own, the name of the job that runs the verdict,
+# such as "check / required"; $prefix, what the caller job puts before the
+# names of the jobs of this workflow, such as "check / ".
 
 def may_skip_ids: to_entries | map(select(.value == true) | .key);
 
@@ -37,7 +38,18 @@ def completed_result:
   then "\(.conclusion), not in caller-may-skip"
   else .conclusion end;
 
-def outside_this_workflow: .name | startswith($prefix) | not;
+# of_this_workflow: a job of the attempt named after a job of this workflow:
+# one of the needs of the verdict, or the job of the verdict itself. A caller
+# job may have a name that starts with $prefix too.
+def of_this_workflow:
+  .name == $own
+  or (.name | startswith($prefix) and (ltrimstr($prefix) | base_name | IN($check | keys[])));
+
+# own_entry: the attempt lists the job of the verdict, or it is not the attempt
+# of this run.
+def own_entry:
+  if any($jobs[]; .name == $own) then empty
+  else {name: "run.\($own)", result: "missing from the jobs of the attempt", ok: false} end;
 
 # attempt_entry: a job of the attempt outside this workflow. One that has not
 # completed cannot be in the needs of the call; one that was skipped may be
@@ -52,4 +64,5 @@ def attempt_entry:
 
 [ needs_entries("caller"; $caller; $caller_may_skip),
   needs_entries("check"; $check; $check_may_skip | may_skip_ids),
-  ($jobs[] | select(outside_this_workflow) | attempt_entry | select(.ok | not)) ]
+  own_entry,
+  ($jobs[] | select(of_this_workflow | not) | attempt_entry | select(.ok | not)) ]
