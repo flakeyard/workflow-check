@@ -10,6 +10,8 @@ shopt -s inherit_errexit
 lib=$(dirname "$0")/../lib
 # shellcheck source=../lib/github/contents.sh
 source "$lib/github/contents.sh"
+# shellcheck source=../lib/github/repository.sh
+source "$lib/github/repository.sh"
 # shellcheck source=../lib/renovate.sh
 source "$lib/renovate.sh"
 # shellcheck source=../lib/report.sh
@@ -23,7 +25,6 @@ readonly OTHER_CONFIGS=(
   .gitlab/renovate.json .gitlab/renovate.json5
 )
 readonly PACKAGE_JSON=package.json
-readonly REPOSITORY_FORM='^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$'
 problems=0
 
 # problem MESSAGE: report an error of the configuration and go on.

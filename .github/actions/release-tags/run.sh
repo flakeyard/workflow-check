@@ -12,6 +12,8 @@ shopt -s inherit_errexit
 lib=$(dirname "$0")/../lib
 # shellcheck source=../lib/github/contents.sh
 source "$lib/github/contents.sh"
+# shellcheck source=../lib/github/repository.sh
+source "$lib/github/repository.sh"
 # shellcheck source=../lib/renovate.sh
 source "$lib/renovate.sh"
 # shellcheck source=../lib/report.sh
@@ -19,7 +21,6 @@ source "$lib/report.sh"
 
 readonly CONFIG=renovate.json
 readonly ANSWERS_FILE='^\.copier-answers.*\.yml$'
-readonly REPOSITORY_FORM='^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$'
 readonly RELEASE_TAG='^v[0-9]+\.[0-9]+\.[0-9]+$'
 # A template on GitHub, as Copier writes it to _src_path.
 readonly GITHUB_TEMPLATE='^(gh:|https://github\.com/)([^/]+/[^/]+)$'
@@ -51,7 +52,7 @@ check_release() {
   local what=$1 repository=$2 tag=$3 release status=0
   release=$(api_request GET "repos/$repository/releases/tags/$tag" 2>/dev/null) || status=$?
   if ((status == NOT_FOUND)); then
-    problem "$what: $repository has no release $tag"
+    problem "$what: $repository has no release $tag that GITHUB_TOKEN can read"
   elif ((status != 0)); then
     fail "cannot read the release $tag of $repository"
   elif ! jq -e '.immutable == true' <<<"$release" >/dev/null; then
