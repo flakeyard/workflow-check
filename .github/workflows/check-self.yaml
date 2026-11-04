@@ -50,6 +50,10 @@ jobs:
             fixture: undeclared-system
             expect-checks: "[]"
             outcome: failure
+          - case: stale-lock
+            fixture: stale-lock
+            expect-checks: "[]"
+            outcome: failure
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:

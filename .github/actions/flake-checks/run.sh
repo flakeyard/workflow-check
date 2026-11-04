@@ -16,6 +16,8 @@ source "$lib/report.sh"
 readonly FLAKE_FORM='^\.(/[A-Za-z0-9_][A-Za-z0-9._-]*)*$'
 readonly SYSTEM_FORM='^[a-z0-9_]+-[a-z0-9_]+$'
 readonly CHECK_NAME_FORM='^[A-Za-z0-9_][A-Za-z0-9_.+-]*$'
+# Every command that reads the flake uses flake.lock as committed.
+readonly LOCKED=(--no-update-lock-file)
 # The systems of every per-system output, applied to the outputs of the flake.
 # shellcheck disable=SC2016 # Nix, not shell.
 readonly DECLARED_SYSTEMS='outputs: builtins.concatMap
@@ -41,7 +43,7 @@ check_native() {
 # check_systems: the flake declares exactly the systems of SYSTEMS.
 check_systems() {
   local declared given
-  declared=$(nix eval --json "$FLAKE#." --apply "$DECLARED_SYSTEMS" | jq -c 'unique') \
+  declared=$(nix eval "${LOCKED[@]}" --json "$FLAKE#." --apply "$DECLARED_SYSTEMS" | jq -c 'unique') \
     || fail "cannot evaluate the systems of the flake $FLAKE"
   given=$(jq -c '[.[].system] | unique' <<<"$SYSTEMS")
   [[ $declared == "$given" ]] && return 0
@@ -50,7 +52,7 @@ check_systems() {
 }
 
 check_evaluation() {
-  nix flake check --no-update-lock-file --no-build --option accept-flake-config false "$FLAKE" \
+  nix flake check "${LOCKED[@]}" --no-build --option accept-flake-config false "$FLAKE" \
     || fail "the flake $FLAKE does not evaluate on $SYSTEM"
 }
 
@@ -58,7 +60,7 @@ check_evaluation() {
 # expected one is missing.
 check_names() {
   local found missing
-  found=$(nix eval --json "$FLAKE#." \
+  found=$(nix eval "${LOCKED[@]}" --json "$FLAKE#." \
     --apply "outputs: builtins.attrNames ((outputs.checks or { }).\"$SYSTEM\" or { })") \
     || fail "cannot evaluate the checks of the flake $FLAKE"
   missing=$(jq -r --argjson found "$found" '. - $found | join(", ")' <<<"$EXPECT_CHECKS")
@@ -77,11 +79,11 @@ installable() {
 build_checks() {
   local name installables=() failed=()
   for name; do installables+=("$(installable "$name")"); done
-  nix build --no-link --print-build-logs --keep-going "${installables[@]}" || true
+  nix build "${LOCKED[@]}" --no-link --print-build-logs --keep-going "${installables[@]}" || true
   summary "| Check on $SYSTEM | Result |"
   summary "| --- | --- |"
   for name; do
-    if nix path-info "$(installable "$name")" >/dev/null 2>&1; then
+    if nix path-info "${LOCKED[@]}" "$(installable "$name")" >/dev/null 2>&1; then
       summary "| $(code_span "$name") | built |"
     else
       summary "| $(code_span "$name") | failed |"
@@ -93,8 +95,9 @@ build_checks() {
 
 check_inputs
 check_native
-check_systems
+# The flake check runs first: it reports a lock file that does not match.
 check_evaluation
+check_systems
 check_names
 if ((${#names[@]} == 0)); then
   notice "the flake $FLAKE has no checks for $SYSTEM"
