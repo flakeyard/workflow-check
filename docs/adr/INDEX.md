@@ -6,10 +6,12 @@
 
 _None._
 
-## Accepted (1)
+## Accepted (2)
 
 - [ADR-0001](records/0001-check-pull-requests-and-pushes.md) Check pull requests
   and pushes (2026-11-05)
+- [ADR-0002](records/0002-check-flake-lock.md) Check flake.lock with
+  action-flake-lock (2026-11-05)
 
 ## Rejected (0)
 
