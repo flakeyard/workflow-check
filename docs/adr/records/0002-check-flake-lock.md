@@ -39,7 +39,7 @@ The design of the action is recorded in its own repository, in
   and arm64.
 - It reports every violation of a run in the job summary and as annotations, and
   fails; it has no mode that only warns. A release it could not verify is
-  reported apart from a violation.
+  reported apart from a violation and also fails the run.
 
 The flake jobs of workflow-check already check out the repository and install
 Nix with action-setup-nix, which evaluates nothing; the next step,
