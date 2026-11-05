@@ -1,0 +1,19 @@
+name: Flake lock notice
+description: >-
+  Emits a notice when the check of flake.lock, a step of the flake jobs, is
+  switched off or does not apply because there is no flake.
+inputs:
+  enabled:
+    description: "'false' switches the check off; it then succeeds with a notice."
+    default: "true"
+  flake:
+    description: The flake, "." or a relative path such as ./dev; empty for none.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        ENABLED: ${{ inputs.enabled }}
+        FLAKE: ${{ inputs.flake }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'

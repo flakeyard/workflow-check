@@ -1,0 +1,28 @@
+name: Inputs of the flake.lock check
+description: >-
+  Validates the inputs of the check of flake.lock and gives them in the form of
+  action-flake-lock: the lock file of the flake, and allow-duplicates as a
+  newline list.
+inputs:
+  flake:
+    description: The flake, "." or a relative path such as ./dev.
+    required: true
+  allow-duplicates:
+    description: JSON array of the sources that may be locked more than once.
+    default: "[]"
+outputs:
+  path:
+    description: The lock file of the flake, relative to the workspace, such as dev/flake.lock.
+    value: ${{ steps.run.outputs.path }}
+  allow-duplicates:
+    description: The sources of allow-duplicates, one per line.
+    value: ${{ steps.run.outputs.allow-duplicates }}
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      env:
+        FLAKE: ${{ inputs.flake }}
+        ALLOW_DUPLICATES: ${{ inputs.allow-duplicates }}
+      run: '"$GITHUB_ACTION_PATH/run.sh"'

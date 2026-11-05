@@ -45,6 +45,17 @@ run_lib() {
   outcome "$name" "$expected" "$status"
 }
 
+# multiline_output NAME: print the lines of the output NAME, written as
+# NAME<<DELIMITER, the lines and DELIMITER.
+multiline_output() {
+  local name=$1
+  awk -v start="$name<<" '
+    delimiter != "" && $0 == delimiter { delimiter = ""; next }
+    delimiter != "" { print }
+    index($0, start) == 1 { delimiter = substr($0, length(start) + 1) }
+  ' "$GITHUB_OUTPUT"
+}
+
 # expect KIND [VALUE...]: check outputs, calls, messages or the summary of the
 # last run.
 expect() {
@@ -54,6 +65,11 @@ expect() {
       local value
       value=$(sed -n "s/^$2=//p" "$GITHUB_OUTPUT")
       [[ $value == "$3" ]] || report "output $2 is '$value', expected '$3'"
+      ;;
+    lines)
+      local lines
+      lines=$(multiline_output "$2")
+      [[ $lines == "$3" ]] || report "output $2 is '$lines', expected '$3'"
       ;;
     stdout)
       [[ $(cat "$work/stdout") == "$2" ]] || report "stdout is '$(cat "$work/stdout")', expected '$2'"

@@ -9,7 +9,11 @@ readonly CHECK_JOBS='["flake","meta","pending","required"]'
 # The permissions the caller grants; no job may ask for more.
 readonly CHECK_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":"read","statuses":"write"}'
 # The checks of meta that an input switches, in their order.
-readonly SWITCHED_CHECKS='["pr-title","renovate-config","release-tags"]'
+readonly SWITCHED_CHECKS='["pr-title","renovate-config","release-tags","flake-lock"]'
+# The steps of flake, in their order: the check of flake.lock comes right
+# after Nix is installed and before the flake is evaluated.
+readonly FLAKE_STEPS='["actions/checkout@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks"]'
+readonly FLAKE_LOCK_CONDITION='${{ inputs.flake-lock }}'
 readonly DISPATCHED="github.event_name == 'workflow_dispatch'"
 
 # check_test NAME FILTER: FILTER is true of check.yaml.
@@ -63,4 +67,26 @@ if require_yq check.yaml; then
     "$SWITCHED_CHECKS"' as $names
     | [.jobs.meta.steps[] | .with.enabled // empty] == [$names[] | "${{ inputs.\(.) }}"]
     and ([.on.workflow_call.inputs[$names[]] | .type == "boolean" and .default == true] | all)'
+  check_test "meta reports the check of flake.lock, which has no step there" \
+    '[.jobs.meta.steps[] | select(.uses == "$/.github/actions/flake-lock-notice") | .with.flake]
+    == ["${{ inputs.flake }}"]'
+  check_test "flake checks flake.lock right after installing Nix" \
+    "$FLAKE_STEPS"' as $steps | uses_of("flake") as $uses
+    | ($uses | length) == ($steps | length)
+    and ([range($steps | length)] | all(. as $i | $uses[$i] | startswith($steps[$i])))'
+  check_test "the check of flake.lock and its inputs are switched by flake-lock" \
+    "[.jobs.flake.steps[] | select(.uses | test(\"flake-lock\")) | condition]
+    == [\"$FLAKE_LOCK_CONDITION\", \"$FLAKE_LOCK_CONDITION\"]"
+  check_test "action-flake-lock gets the lock file and the duplicates, and keeps the pin form" \
+    '.jobs.flake.steps[] | select(.uses | startswith("flakeyard/action-flake-lock@")) | .with
+    == {"path": "${{ steps.flake-lock-inputs.outputs.path }}",
+    "allow-duplicates": "${{ steps.flake-lock-inputs.outputs.allow-duplicates }}"}'
+  check_test "the inputs of the check of flake.lock are those of the workflow" \
+    '.jobs.flake.steps[] | select(.id == "flake-lock-inputs") | .with
+    == {"flake": "${{ inputs.flake }}", "allow-duplicates": "${{ inputs.allow-duplicates }}"}'
+  check_test "allow-duplicates is a JSON array, empty by default" \
+    '.on.workflow_call.inputs["allow-duplicates"] | .type == "string" and .default == "[]"'
+  check_test "flake-checks runs also when the check of flake.lock failed" \
+    '[.jobs.flake.steps[] | select(.uses == "$/.github/actions/flake-checks") | condition]
+    == ["${{ !cancelled() }}"]'
 fi
