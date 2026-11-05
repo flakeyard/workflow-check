@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: flakeyard/action-setup-nix@a90eeb051e85033f5d3c3e40dd213a585f34ec8d # v0.1.1
+      - uses: flakeyard/action-setup-nix@feaa363e1aa0007d70c643731c508bb40190ce83 # v0.1.2
       - id: flake-checks
         continue-on-error: true
         uses: $/.github/actions/flake-checks
