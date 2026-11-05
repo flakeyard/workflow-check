@@ -3,10 +3,10 @@
 A reusable GitHub Actions workflow that checks pull requests and pushes of
 flakeyard repositories and of projects generated from flakeyard templates. A
 repository calls it as the last job of its check workflow. It builds the checks
-of the repository's flake on every system the flake declares, checks what only
-the event and the GitHub API can tell, such as the title of a pull request, and
-ends with one job whose check, `check / required`, is the only required status
-check of the repository.
+of the repository's flake on every system the flake declares, after checking its
+`flake.lock`, checks what only the event and the GitHub API can tell, such as
+the title of a pull request, and ends with one job whose check,
+`check / required`, is the only required status check of the repository.
 
 ## Usage
 
@@ -74,6 +74,17 @@ rulesets of the repository. Reference the workflow by full commit SHA, as above.
 
 ## Checks
 
+- **Flake lock.** In every flake job, right after Nix is installed and before
+  the flake is evaluated, [action-flake-lock][action-flake-lock] checks
+  `<flake>/flake.lock`: every flakeyard input is locked to the commit of a
+  release `vX.Y.Z` of the major version its `ref` names, no source is locked
+  twice unless it is in `allow-duplicates`, and every input of the root is
+  pinned as
+  `git+https://github.com/<owner>/<repo>?ref=<ref>&rev=<commit>&shallow=1`. The
+  action builds its own tools and evaluates only its own flake. It reports every
+  problem in the job summary and as annotations, once per system, and fails the
+  job; the flake checks still run. With `flake-lock: false` or `flake: ""`, the
+  job `meta` emits a notice instead.
 - **Flake checks.** On every system of `systems`, the job
   `flake (<system>, <runner>)` checks out the repository, installs Nix with
   [action-setup-nix](https://github.com/flakeyard/action-setup-nix), checks that
@@ -103,8 +114,9 @@ rulesets of the repository. Reference the workflow by full commit SHA, as above.
   Built-in presets of Renovate are versioned with Renovate and are not checked.
 
 Repository files are read through the contents API at the checked commit; only
-the jobs that build the flake check out the repository. A check that is switched
-off by its input succeeds with a notice.
+the jobs that build the flake check out the repository, and only the check of
+`flake.lock` reads a file of that checkout, the lock that Nix then uses. A check
+that is switched off by its input succeeds with a notice.
 
 ## Inputs
 
@@ -133,6 +145,11 @@ off by its input succeeds with a notice.
   to immutable releases.
 - `allow-unpinned` (default `[]`): JSON array of `owner/repo` whose presets and
   templates are not checked.
+- `flake-lock` (default `true`): check `flake.lock` with action-flake-lock.
+- `allow-duplicates` (default `[]`): JSON array of the normalized sources that
+  `flake.lock` may lock more than once, such as `github.com/nixos/nixpkgs` or
+  `github.com/<owner>/<repo>?dir=<dir>`, for example a second nixpkgs for a
+  broken tool.
 
 The workflow takes no secrets and has no outputs.
 
@@ -149,9 +166,9 @@ The calling job must grant `actions: read`, `contents: read`,
 - `statuses`: commit statuses of dispatched runs. In pull requests from forks,
   the token is read-only; statuses are posted only on `workflow_dispatch`.
 
-The release tag check reads releases with the same token, so it sees only the
-repositories the token can read: a release of a private repository of another
-owner reads as missing.
+The checks of release tags and of `flake.lock` read releases with the same
+token, so they see only the repositories the token can read: a release of a
+private repository of another owner reads as missing.
 
 ## Behaviour
 
@@ -199,6 +216,10 @@ referenced with `$/`:
   preset of the given repositories;
 - `release-tags`: every Renovate preset and Copier template is pinned to the tag
   of an immutable GitHub release;
+- `flake-lock-notice`: a notice in `meta` when the check of `flake.lock` is
+  switched off or there is no flake;
+- `flake-lock-inputs`: the lock file of the flake and `allow-duplicates` as the
+  newline list of action-flake-lock;
 - `flake-checks`: the flake evaluates and its checks build natively, on runners
   for exactly the systems it declares;
 - `context`: the context of the commit status, from the name of the job that
@@ -212,9 +233,10 @@ The actions run their `run.sh` and source the helpers in `lib`: `lib/github/`
 calls the GitHub API (`api.sh`, which tells a missing resource from an error,
 `contents.sh`, which reads repository files at the checked commit, and
 `jobs.sh`, which reads the name of a job and the jobs of a run attempt) and
-holds the form of repository names (`repository.sh`), `lib/renovate.sh` reads
-presets of a Renovate configuration, and `lib/report.sh` reports errors,
-warnings, notices and lines of the job summary, escaping the text it is given.
+holds the form of repository names (`repository.sh`), `lib/flake.sh` holds the
+form of the input `flake`, `lib/renovate.sh` reads presets of a Renovate
+configuration, and `lib/report.sh` reports errors, warnings, notices and lines
+of the job summary, escaping the text it is given.
 
 `tests/run.sh` tests the scripts with the stubs of `gh` and `nix` in
 `tests/bin`; the suites in `tests/unit` mirror the actions and the helpers and
@@ -246,8 +268,9 @@ the end of life of the nixpkgs branch in `nixpkgs-eol` and fails after it,
 following
 [FY-0026](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0026-stable-nixpkgs.md).
 The design of the workflow is recorded in
-[ADR-0001](docs/adr/records/0001-check-pull-requests-and-pushes.md), under
-[`docs/adr`](docs/adr); the rules for callers are those of
+[ADR-0001](docs/adr/records/0001-check-pull-requests-and-pushes.md) and the
+check of `flake.lock` in [ADR-0002](docs/adr/records/0002-check-flake-lock.md),
+under [`docs/adr`](docs/adr); the rules for callers are those of
 [FY-0034](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0034-check-every-repository-with-workflow-check.md);
 both follow
 [FY-0009](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0009-ci-on-runners.md)
@@ -267,3 +290,5 @@ not released yet. Until they are:
 ## License
 
 [MIT](LICENSE).
+
+[action-flake-lock]: https://github.com/flakeyard/action-flake-lock

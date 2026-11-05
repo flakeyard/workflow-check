@@ -11,11 +11,11 @@ shopt -s inherit_errexit
 export LC_ALL=C.UTF-8
 : "${FLAKE:?}" "${SYSTEM:?}" "${SYSTEMS:?}" "${EXPECT_CHECKS:?}"
 lib=$(dirname "$0")/../lib
+# shellcheck source=../lib/flake.sh
+source "$lib/flake.sh"
 # shellcheck source=../lib/report.sh
 source "$lib/report.sh"
 
-# The flake is in the checked-out repository: "." or a path below it.
-readonly FLAKE_FORM='^\.(/[A-Za-z0-9_][A-Za-z0-9._-]*)*$'
 readonly SYSTEM_FORM='^[a-z0-9_]+-[a-z0-9_]+$'
 readonly CHECK_NAME_FORM='^[A-Za-z0-9_][A-Za-z0-9_.+-]*$'
 # Every command that reads the flake uses flake.lock as committed.

@@ -1,11 +1,11 @@
 # Reusable check workflow. A repository calls it from its check workflow as
 # the last job, with the id check, and passes the results of its other jobs as
-# the input needs. It builds the checks of the repository's flake on every
-# system the flake declares, and checks what only the event and the API can
-# tell. The job required, whose check is "check / required", fails
-# unless every job of the run succeeded; on workflow_dispatch the workflow also
-# posts that result as a commit status. Each step's logic lives in
-# .github/actions.
+# the input needs. It checks the flake.lock of the repository's flake and
+# builds the flake's checks on every system the flake declares, and checks
+# what only the event and the API can tell. The job required, whose check is
+# "check / required", fails unless every job of the run succeeded; on
+# workflow_dispatch the workflow also posts that result as a commit status.
+# Each step's logic lives in .github/actions.
 name: check
 
 on:
@@ -87,6 +87,20 @@ on:
           does not check.
         type: string
         default: "[]"
+      flake-lock:
+        description: >-
+          Check flake.lock with action-flake-lock: flakeyard inputs are
+          released, no source is locked twice and root inputs are pinned in
+          one form. false switches the check off; it then succeeds with a
+          notice.
+        type: boolean
+        default: true
+      allow-duplicates:
+        description: >-
+          JSON array of the normalized sources that flake.lock may lock more
+          than once, such as github.com/nixos/nixpkgs.
+        type: string
+        default: "[]"
 
 permissions: {}
 
@@ -133,6 +147,12 @@ jobs:
         with:
           enabled: ${{ inputs.release-tags }}
           allow-unpinned: ${{ inputs.allow-unpinned }}
+      # The check of flake.lock runs in the flake jobs.
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/flake-lock-notice
+        with:
+          enabled: ${{ inputs.flake-lock }}
+          flake: ${{ inputs.flake }}
 
   flake:
     # No name: GitHub names each job after its matrix values, and a job
@@ -151,11 +171,26 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - id: flake-lock-inputs
+        if: ${{ inputs.flake-lock }}
+        uses: $/.github/actions/flake-lock-inputs
+        with:
+          flake: ${{ inputs.flake }}
+          allow-duplicates: ${{ inputs.allow-duplicates }}
       - uses: flakeyard/action-setup-nix@a90eeb051e85033f5d3c3e40dd213a585f34ec8d # v0.1.1
         with:
           extra-substituters: ${{ inputs.extra-substituters }}
           extra-trusted-public-keys: ${{ inputs.extra-trusted-public-keys }}
-      - uses: $/.github/actions/flake-checks
+      # Before the flake is evaluated. It reads releases with github.token,
+      # which needs no permissions.
+      - if: ${{ inputs.flake-lock }}
+        uses: flakeyard/action-flake-lock@22ec9e6fc587bc94ecc81057c9f5a0e198c54efa # v0.1.0
+        with:
+          path: ${{ steps.flake-lock-inputs.outputs.path }}
+          allow-duplicates: ${{ steps.flake-lock-inputs.outputs.allow-duplicates }}
+      # Also when the check of flake.lock failed, so that one run reports both.
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/flake-checks
         with:
           flake: ${{ inputs.flake }}
           system: ${{ matrix.system }}
