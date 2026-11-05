@@ -25,6 +25,15 @@ fail() {
   exit 1
 }
 
+# problem MESSAGE: report an error and go on; problems is then 1, and the
+# step fails at its end.
+problems=0
+# shellcheck disable=SC2034 # The scripts that source this file read problems.
+problem() {
+  error "$*"
+  problems=1
+}
+
 # notice MESSAGE: report a notice.
 notice() {
   printf '::notice::%s\n' "$(escape_command "$*")"

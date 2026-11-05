@@ -27,13 +27,6 @@ readonly OTHER_CONFIGS=(
   .gitlab/renovate.json .gitlab/renovate.json5
 )
 readonly PACKAGE_JSON=package.json
-problems=0
-
-# problem MESSAGE: report an error of the configuration and go on.
-problem() {
-  error "$*"
-  problems=1
-}
 
 # exists PATH: PATH exists at SHA; exits on an error of the API.
 exists() {
@@ -78,8 +71,7 @@ check_config() {
       problem "$CONFIG is not a JSON object"
       return
     }
-  jq -e '.extends | type == "array" and length > 0
-    and all(.[]; type == "string" and (test("[\\n\\r]") | not))' <<<"$config" >/dev/null \
+  jq -e "$PRESET_LIST_DEF"' .extends | preset_list and length > 0' <<<"$config" >/dev/null \
     || {
       problem "$CONFIG must extend presets: extends must be a non-empty array of one-line strings"
       return

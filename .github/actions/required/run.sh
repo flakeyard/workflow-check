@@ -79,5 +79,5 @@ jobs=$(attempt_jobs "$RUN_ID" "$RUN_ATTEMPT") \
   || fail "cannot read the jobs of attempt $RUN_ATTEMPT of run $RUN_ID"
 entries=$(verdict "$own" "$prefix" "$jobs")
 summary_table "$entries"
-problems=$(jq -r '[.[] | select(.ok | not) | "\(.name): \(.result)"] | join(", ")' <<<"$entries")
-[[ -z $problems ]] || fail "jobs that did not succeed: $problems"
+failures=$(jq -r '[.[] | select(.ok | not) | "\(.name): \(.result)"] | join(", ")' <<<"$entries")
+[[ -z $failures ]] || fail "jobs that did not succeed: $failures"

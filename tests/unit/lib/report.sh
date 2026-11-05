@@ -20,6 +20,18 @@ run_lib "report: errors do not exit" ok "$lib" error one
 expect stdout '::error::one'
 finish
 
+# problem_is_counted: a problem goes on and sets problems.
+# shellcheck disable=SC2154 # problems is set by lib/report.sh.
+problem_is_counted() {
+  problem one
+  ((problems == 1))
+}
+
+setup
+run_lib "report: a problem goes on and is counted" ok "$lib" problem_is_counted
+expect stdout '::error::one'
+finish
+
 setup
 run_lib "report: a code span keeps one line and its cell" ok "$lib" \
   code_span $'a`b|c\nd'
