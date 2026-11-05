@@ -1,6 +1,6 @@
 # shellcheck shell=bash
-# Messages of a step: errors, warnings and notices in the log, and lines of
-# the job summary. Messages often quote text that others choose, such as a pull
+# Messages of a step: errors and notices in the log, and lines of the job
+# summary. Messages often quote text that others choose, such as a pull
 # request title or a file of the repository, so every message is escaped: it
 # cannot end its workflow command and start another, and it cannot leave a code
 # span of the summary.
@@ -23,11 +23,6 @@ error() {
 fail() {
   error "$*"
   exit 1
-}
-
-# warning MESSAGE: report a warning.
-warning() {
-  printf '::warning::%s\n' "$(escape_command "$*")"
 }
 
 # notice MESSAGE: report a notice.
