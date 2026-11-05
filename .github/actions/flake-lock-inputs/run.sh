@@ -10,10 +10,10 @@ shopt -s inherit_errexit
 export LC_ALL=C.UTF-8
 : "${FLAKE:?}" "${ALLOW_DUPLICATES?}"
 lib=$(dirname "$0")/../lib
-# shellcheck source=../lib/flake.sh
-source "$lib/flake.sh"
 # shellcheck source=../lib/report.sh
 source "$lib/report.sh"
+# shellcheck source=../lib/flake.sh
+source "$lib/flake.sh"
 
 readonly LOCK_FILE=flake.lock
 # A source is one word: a line break would split it in two lines of the list.
@@ -22,7 +22,7 @@ readonly SOURCE_FORM='\A[^[:space:]]+\z'
 readonly UUID_FILE=/proc/sys/kernel/random/uuid
 
 check_inputs() {
-  [[ $FLAKE =~ $FLAKE_FORM ]] || fail "flake must be . or a path below it, not $FLAKE"
+  check_flake "$FLAKE"
   jq -e --arg form "$SOURCE_FORM" 'type == "array" and all(.[]; type == "string" and test($form))' \
     <<<"$ALLOW_DUPLICATES" >/dev/null 2>&1 \
     || fail "allow-duplicates is not a JSON array of sources such as github.com/nixos/nixpkgs"

@@ -3,7 +3,6 @@
 
 # owner/repo as GitHub allows them. A repository name needs a character other
 # than a dot: ".." or "." would change the path of an API call.
-# shellcheck disable=SC2034 # Used by the scripts that source this file.
 readonly REPOSITORY_FORM='^[A-Za-z0-9-]+/[A-Za-z0-9._-]*[A-Za-z0-9_-][A-Za-z0-9._-]*$'
 
 # is_repository_list JSON: JSON is an array of owner/repo.
