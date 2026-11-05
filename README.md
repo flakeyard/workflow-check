@@ -245,8 +245,11 @@ required check, runs `nix run .#check-eol -- nixpkgs-eol`
 the end of life of the nixpkgs branch in `nixpkgs-eol` and fails after it,
 following
 [FY-0026](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0026-stable-nixpkgs.md).
-The design follows
-[FY-0031](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0031-check-pull-requests-and-pushes-with-workflow-check.md),
+The design of the workflow is recorded in
+[ADR-0001](docs/adr/records/0001-check-pull-requests-and-pushes.md), under
+[`docs/adr`](docs/adr); the rules for callers are those of
+[FY-0034](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0034-check-every-repository-with-workflow-check.md);
+both follow
 [FY-0009](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0009-ci-on-runners.md)
 and
 [FY-0030](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0030-actions-workflows-and-release-bot.md).
