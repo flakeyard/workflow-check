@@ -6,7 +6,6 @@
 # The condition of the caller job: no result for a superseded pull request
 # run, and a final status for every dispatched run.
 readonly CALLER_CONDITION="\${{ !cancelled() || github.event_name == 'workflow_dispatch' }}"
-readonly CALLER_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":"read","statuses":"write"}'
 
 # self_test NAME FILTER: FILTER is true of check-self.yaml.
 self_test() { workflow_check "$self_workflow" "check-self.yaml: $1" "$2"; }
@@ -24,7 +23,7 @@ if require_yq check-self.yaml; then
   self_test "check runs unless cancelled, and always on dispatch" \
     ".jobs.check | condition == \"$CALLER_CONDITION\""
   self_test "check gets the permissions of the product workflow" \
-    ".jobs.check.permissions == $CALLER_PERMISSIONS"
+    ".jobs.check.permissions == $CHECK_PERMISSIONS"
   self_test "renovate.json extends the presets of the organization" \
     '.jobs.check.with["renovate-presets"] | fromjson == ["flakeyard/renovate-config"]'
   self_test "an edit of a pull request cancels no run" \

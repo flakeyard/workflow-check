@@ -11,6 +11,10 @@
 # of this repository, and others pinned by commit.
 readonly OWN_OR_PINNED='^(\$/\.github/actions/[a-z-]+|[A-Za-z0-9-]+/[A-Za-z0-9._-]+@[0-9a-f]{40})$'
 
+# The permissions a caller grants the check workflow; no job of it may ask for
+# more.
+readonly CHECK_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":"read","statuses":"write"}'
+
 # Helpers of the expressions of workflow_check.
 readonly WORKFLOW_DEFS='
   def condition: (.if // "") | gsub("\\s+"; " ");
