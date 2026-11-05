@@ -1,19 +1,8 @@
 # shellcheck shell=bash
 # Presets of a Renovate configuration.
 
-# A preset of a GitHub repository: github>owner/repo, then optionally //path,
-# :name and #tag.
-readonly GITHUB_PRESET='^github>([^/:#]+/[^/:#]+)'
-
-# preset_repository PRESET: print owner/repo of a preset of a GitHub
-# repository; fails for any other preset.
-preset_repository() {
-  local preset=$1
-  [[ $preset =~ $GITHUB_PRESET ]] || return 1
-  printf '%s\n' "${BASH_REMATCH[1]}"
-}
-
-# A preset of any source that names a repository: <platform>>owner/repo.
+# A preset of any source that names a repository: <platform>>owner/repo, then
+# optionally //path, :name and #tag.
 readonly REPOSITORY_PRESET='^[a-z]+>([^/:#]+/[^/:#]+)'
 # A built-in preset of Renovate, such as config:recommended or
 # :semanticCommits; it is versioned with Renovate itself.
@@ -25,6 +14,18 @@ preset_source() {
   local preset=$1
   [[ $preset =~ $REPOSITORY_PRESET ]] || return 1
   printf '%s\n' "${BASH_REMATCH[1]}"
+}
+
+# is_github_preset PRESET: PRESET is a preset of a GitHub repository.
+is_github_preset() {
+  [[ $1 == github\>* ]]
+}
+
+# preset_repository PRESET: print owner/repo of a preset of a GitHub
+# repository; fails for any other preset.
+preset_repository() {
+  local preset=$1
+  is_github_preset "$preset" && preset_source "$preset"
 }
 
 # preset_tag PRESET: print the tag after the last "#" of a preset, or nothing.

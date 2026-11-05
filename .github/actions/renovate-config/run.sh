@@ -44,10 +44,7 @@ exists() {
 }
 
 check_presets_input() {
-  jq -e --arg form "$REPOSITORY_FORM" \
-    'type == "array" and all(.[]; type == "string" and test($form))' \
-    <<<"$PRESETS" >/dev/null 2>&1 \
-    || fail "renovate-presets is not a JSON array of owner/repo"
+  is_repository_list "$PRESETS" || fail "renovate-presets is not a JSON array of owner/repo"
 }
 
 check_other_configs() {
@@ -68,9 +65,7 @@ extends_listed_preset() {
   [[ $(jq length <<<"$PRESETS") != 0 ]] || return 0
   while IFS= read -r preset; do
     repository=$(preset_repository "$preset") || continue
-    jq -e --arg repository "$repository" \
-      'any(.[]; ascii_downcase == ($repository | ascii_downcase))' <<<"$PRESETS" >/dev/null \
-      && return 0
+    lists_repository "$PRESETS" "$repository" && return 0
   done < <(jq -r '.extends[]' <<<"$config")
   return 1
 }

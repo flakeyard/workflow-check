@@ -35,17 +35,12 @@ problem() {
 }
 
 check_allow_input() {
-  jq -e --arg form "$REPOSITORY_FORM" \
-    'type == "array" and all(.[]; type == "string" and test($form))' \
-    <<<"$ALLOW_UNPINNED" >/dev/null 2>&1 \
-    || fail "allow-unpinned is not a JSON array of owner/repo"
+  is_repository_list "$ALLOW_UNPINNED" || fail "allow-unpinned is not a JSON array of owner/repo"
 }
 
 # is_allowed REPOSITORY: REPOSITORY is in ALLOW_UNPINNED, without case.
 is_allowed() {
-  jq -e --arg repository "$1" \
-    'any(.[]; ascii_downcase == ($repository | ascii_downcase))' \
-    <<<"$ALLOW_UNPINNED" >/dev/null
+  lists_repository "$ALLOW_UNPINNED" "$1"
 }
 
 # check_release WHAT REPOSITORY TAG: the release TAG of REPOSITORY exists and
@@ -85,7 +80,7 @@ check_preset() {
   is_builtin_preset "$preset" && return 0
   if ! repository=$(preset_source "$preset"); then
     problem "$what: not a preset of a repository"
-  elif [[ $preset != github\>* ]] && ! is_allowed "$repository"; then
+  elif ! is_github_preset "$preset" && ! is_allowed "$repository"; then
     problem "$what: only presets of GitHub repositories, github>owner/repo#vX.Y.Z, can be pinned to a release"
   else
     check_reference "$what" "$repository" "$(preset_tag "$preset")"
