@@ -4,13 +4,14 @@
 # shellcheck source=api.sh
 source "${BASH_SOURCE[0]%/*}/api.sh"
 
-# A check run id, which is also the id of its job.
-readonly CHECK_RUN_ID_FORM='^[1-9][0-9]*$'
+# A check run id, which is also the id of its job, a run id or the number of
+# an attempt.
+readonly ID_FORM='^[1-9][0-9]*$'
 
 # job_name CHECK_RUN_ID: print the name of a job, such as "check / required".
 job_name() {
   local id=$1 job
-  [[ $id =~ $CHECK_RUN_ID_FORM ]] || {
+  [[ $id =~ $ID_FORM ]] || {
     echo "not a check run id: $id" >&2
     return 1
   }
@@ -28,15 +29,12 @@ caller_prefix() {
   fi
 }
 
-# Ids of workflow runs and numbers of their attempts.
-readonly RUN_NUMBER_FORM='^[1-9][0-9]*$'
-
 # attempt_jobs RUN_ID ATTEMPT: print the jobs of one attempt of a run, every
 # job of the run with the result it has in that attempt, as a JSON array of
 # {name, status, conclusion}.
 attempt_jobs() {
   local run_id=$1 attempt=$2 jobs
-  [[ $run_id =~ $RUN_NUMBER_FORM && $attempt =~ $RUN_NUMBER_FORM ]] || {
+  [[ $run_id =~ $ID_FORM && $attempt =~ $ID_FORM ]] || {
     echo "not a run id and attempt: $run_id, $attempt" >&2
     return 1
   }

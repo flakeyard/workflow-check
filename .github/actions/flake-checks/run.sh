@@ -11,10 +11,10 @@ shopt -s inherit_errexit
 export LC_ALL=C.UTF-8
 : "${FLAKE:?}" "${SYSTEM:?}" "${SYSTEMS:?}" "${EXPECT_CHECKS:?}"
 lib=$(dirname "$0")/../lib
-# shellcheck source=../lib/flake.sh
-source "$lib/flake.sh"
 # shellcheck source=../lib/report.sh
 source "$lib/report.sh"
+# shellcheck source=../lib/flake.sh
+source "$lib/flake.sh"
 
 readonly SYSTEM_FORM='^[a-z0-9_]+-[a-z0-9_]+$'
 readonly CHECK_NAME_FORM='^[A-Za-z0-9_][A-Za-z0-9_.+-]*$'
@@ -27,7 +27,7 @@ readonly DECLARED_SYSTEMS='outputs: builtins.concatMap
   [ "checks" "packages" "apps" "devShells" "formatter" ]'
 
 check_inputs() {
-  [[ $FLAKE =~ $FLAKE_FORM ]] || fail "flake must be . or a path below it, not $FLAKE"
+  check_flake "$FLAKE"
   [[ $SYSTEM =~ $SYSTEM_FORM ]] || fail "not a system: $SYSTEM"
   jq -e 'type == "array" and length > 0
     and all(.[]; (.system | type) == "string" and (.runner | type) == "string")' \
