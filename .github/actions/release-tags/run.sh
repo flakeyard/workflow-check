@@ -26,26 +26,14 @@ readonly ANSWERS_FILE='^\.copier-answers.*\.yml$'
 readonly RELEASE_TAG='^v[0-9]+\.[0-9]+\.[0-9]+$'
 # A template on GitHub, as Copier writes it to _src_path.
 readonly GITHUB_TEMPLATE='^(gh:|https://github\.com/)([^/]+/[^/]+)$'
-problems=0
-
-# problem MESSAGE: report an error of a reference and go on.
-problem() {
-  error "$*"
-  problems=1
-}
 
 check_allow_input() {
-  jq -e --arg form "$REPOSITORY_FORM" \
-    'type == "array" and all(.[]; type == "string" and test($form))' \
-    <<<"$ALLOW_UNPINNED" >/dev/null 2>&1 \
-    || fail "allow-unpinned is not a JSON array of owner/repo"
+  is_repository_list "$ALLOW_UNPINNED" || fail "allow-unpinned is not a JSON array of owner/repo"
 }
 
 # is_allowed REPOSITORY: REPOSITORY is in ALLOW_UNPINNED, without case.
 is_allowed() {
-  jq -e --arg repository "$1" \
-    'any(.[]; ascii_downcase == ($repository | ascii_downcase))' \
-    <<<"$ALLOW_UNPINNED" >/dev/null
+  lists_repository "$ALLOW_UNPINNED" "$1"
 }
 
 # check_release WHAT REPOSITORY TAG: the release TAG of REPOSITORY exists and
@@ -85,7 +73,7 @@ check_preset() {
   is_builtin_preset "$preset" && return 0
   if ! repository=$(preset_source "$preset"); then
     problem "$what: not a preset of a repository"
-  elif [[ $preset != github\>* ]] && ! is_allowed "$repository"; then
+  elif ! is_github_preset "$preset" && ! is_allowed "$repository"; then
     problem "$what: only presets of GitHub repositories, github>owner/repo#vX.Y.Z, can be pinned to a release"
   else
     check_reference "$what" "$repository" "$(preset_tag "$preset")"
@@ -102,8 +90,7 @@ check_presets() {
   config=$(file_at "$CONFIG" "$SHA" 2>/dev/null) || status=$?
   ((status != NOT_FOUND)) || return 0
   ((status == 0)) || fail "cannot read $CONFIG at $SHA"
-  jq -e "$EXTENDS"' | all(type == "array"
-    and all(.[]; type == "string" and (test("[\\n\\r]") | not)))' <<<"$config" >/dev/null 2>&1 \
+  jq -e "$PRESET_LIST_DEF $EXTENDS | all(preset_list)" <<<"$config" >/dev/null 2>&1 \
     || fail "$CONFIG is not JSON whose extends are arrays of one-line strings"
   while IFS= read -r preset; do
     check_preset "$preset"

@@ -6,8 +6,6 @@
 
 # The jobs of the workflow, sorted.
 readonly CHECK_JOBS='["flake","meta","pending","required"]'
-# The permissions the caller grants; no job may ask for more.
-readonly CHECK_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":"read","statuses":"write"}'
 # The checks of meta that an input switches, in their order.
 readonly SWITCHED_CHECKS='["pr-title","renovate-config","release-tags","flake-lock"]'
 # The steps of flake, in their order: the check of flake.lock comes right

@@ -233,10 +233,10 @@ The actions run their `run.sh` and source the helpers in `lib`: `lib/github/`
 calls the GitHub API (`api.sh`, which tells a missing resource from an error,
 `contents.sh`, which reads repository files at the checked commit, and
 `jobs.sh`, which reads the name of a job and the jobs of a run attempt) and
-holds the form of repository names (`repository.sh`), `lib/flake.sh` holds the
-form of the input `flake`, `lib/renovate.sh` reads presets of a Renovate
-configuration, and `lib/report.sh` reports errors, warnings, notices and lines
-of the job summary, escaping the text it is given.
+holds the form of repository names and lists of them (`repository.sh`),
+`lib/flake.sh` holds the form of the input `flake`, `lib/renovate.sh` reads
+presets of a Renovate configuration, and `lib/report.sh` reports errors, notices
+and lines of the job summary, escaping the text it is given.
 
 `tests/run.sh` tests the scripts with the stubs of `gh` and `nix` in
 `tests/bin`; the suites in `tests/unit` mirror the actions and the helpers and

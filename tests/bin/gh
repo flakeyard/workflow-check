@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
-# Stub of gh for tests.
+# Stub of gh api for tests.
 #
-# GET PATH is answered from $FIXTURES/<key>, where <key> is PATH with "/",
-# "?", "&" and "=" replaced by "_"; with --paginate, $FIXTURES/<key>.2,
-# <key>.3 and so on are further pages. A missing file is HTTP 404, and a file
-# containing "HTTP 500" is a server error; like gh, errors print the error body
-# on stdout and the message on stderr. While $FIXTURES/<key>.transient holds a
-# count above zero, each GET decrements it and fails with HTTP 504.
+# GET PATH is answered from the file that fixture_file of
+# tests/lib/fixtures/responses.sh names; with --paginate, FILE.2, FILE.3 and
+# so on are further pages. A missing file is HTTP 404, and a file containing
+# "HTTP 500" is a server error; like gh, errors print the error body on stdout
+# and the message on stderr. While FILE.transient holds a count above zero,
+# each GET decrements it and fails with HTTP 504.
 #
-# Other methods and "gh workflow run" are appended to $CALLS and succeed,
-# unless "<METHOD> <PATH> [STATUS]" is listed in $FAIL_ON (one per line), which
-# fails with HTTP STATUS, 502 by default.
+# Other methods are appended to $CALLS and succeed, unless
+# "<METHOD> <PATH> [STATUS]" is listed in $FAIL_ON (one per line), which fails
+# with HTTP STATUS, 502 by default.
+# shellcheck source-path=SCRIPTDIR
 set -euo pipefail
-
-key() { echo "${1//[\/?&=]/_}"; }
+# shellcheck source=../lib/fixtures/responses.sh
+source "${BASH_SOURCE[0]%/*}/../lib/fixtures/responses.sh"
 
 # fail STATUS [MESSAGE]: fail like gh does on an HTTP error.
 fail() {
@@ -40,11 +41,6 @@ failure_status() {
   return 1
 }
 
-if [[ $1 == workflow ]]; then
-  shift
-  echo "workflow $*" >>"$CALLS"
-  exit 0
-fi
 [[ $1 == api ]] || {
   echo "stub gh: unsupported: $*" >&2
   exit 2
@@ -58,11 +54,11 @@ while (($#)); do
       method=$2
       shift 2
       ;;
-    --jq | -q)
+    --jq)
       jq_filter=$2
       shift 2
       ;;
-    -f | -F)
+    -f)
       fields+=("$2")
       shift 2
       ;;
@@ -93,7 +89,7 @@ if [[ $method != GET ]]; then
   exit 0
 fi
 
-file=$FIXTURES/$(key "$path")
+file=$(fixture_file "$path")
 # fail_transiently: fail with HTTP 504 while the count of FILE.transient lasts.
 fail_transiently() {
   local count
