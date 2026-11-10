@@ -2,7 +2,7 @@
 # Tests of required.
 # shellcheck disable=SC2016 # Code spans of the summary, not expansions.
 
-script=required/run.sh
+script=.github/actions/required/run.sh
 attempt_path="repos/o/r/actions/runs/7/attempts/2/jobs?per_page=100"
 
 # The job of the verdict in the jobs of the attempt.
@@ -22,7 +22,7 @@ check_needs() {
 
 # required_setup: a pull request run whose jobs all succeeded.
 required_setup() {
-  setup
+  action_setup
   apply RUN_ID=7 RUN_ATTEMPT=2 CHECK_RUN_ID=99 \
     CALLER='{"install":{"result":"success","outputs":{}}}' \
     CHECK="$(check_needs success)" \
@@ -199,5 +199,5 @@ required_setup
 apply CALLER='{"x\n::warning::forged":{"result":"failure"}}'
 run "required: job ids are escaped" fail "$script"
 expect message "caller.x%0A::warning::forged: failure"
-expect no-command warning
+expect warnings 0
 finish

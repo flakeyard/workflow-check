@@ -2,12 +2,12 @@
 # Tests of flake-checks, with the stub of nix.
 # shellcheck disable=SC2016 # Code spans of the summary, not expansions.
 
-script="flake-checks/run.sh"
+script=.github/actions/flake-checks/run.sh
 readonly DEFAULT_SYSTEMS='[{"system":"x86_64-linux","runner":"ubuntu-24.04"},{"system":"aarch64-linux","runner":"ubuntu-24.04-arm"}]'
 
 # flake_setup: a flake of both default systems with the checks a and b.
 flake_setup() {
-  setup
+  action_setup
   apply FLAKE=. SYSTEM=x86_64-linux SYSTEMS="$DEFAULT_SYSTEMS" EXPECT_CHECKS='[]' \
     NIX_SYSTEM=x86_64-linux NIX_DECLARED='["x86_64-linux","aarch64-linux","x86_64-linux"]' \
     NIX_CHECKS='["a","b.c"]'

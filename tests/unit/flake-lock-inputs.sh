@@ -1,11 +1,12 @@
 # shellcheck shell=bash
 # Tests of flake-lock-inputs.
+# shellcheck disable=SC2154 # work is the directory of the test, from setup.
 
-script="flake-lock-inputs/run.sh"
+script=.github/actions/flake-lock-inputs/run.sh
 
 # inputs_setup FLAKE ALLOW_DUPLICATES: the inputs of the action.
 inputs_setup() {
-  setup
+  action_setup
   apply FLAKE="$1" ALLOW_DUPLICATES="$2"
 }
 
@@ -14,18 +15,18 @@ for flake_and_path in ".:flake.lock" "./dev:dev/flake.lock" "./a/b.c:a/b.c/flake
   inputs_setup "${flake_and_path%%:*}" '[]'
   run "flake-lock-inputs: the lock file of ${flake_and_path%%:*}" ok "$script"
   expect output path "${flake_and_path#*:}"
-  expect lines allow-duplicates ""
+  expect_lines allow-duplicates ""
   finish
 done
 
 inputs_setup . '["github.com/nixos/nixpkgs","github.com/o/r?dir=sub"]'
 run "flake-lock-inputs: one source per line" ok "$script"
-expect lines allow-duplicates $'github.com/nixos/nixpkgs\ngithub.com/o/r?dir=sub'
+expect_lines allow-duplicates $'github.com/nixos/nixpkgs\ngithub.com/o/r?dir=sub'
 finish
 
 inputs_setup . '["EOF"]'
 run "flake-lock-inputs: no source ends the list" ok "$script"
-expect lines allow-duplicates "EOF"
+expect_lines allow-duplicates "EOF"
 finish
 
 for flake in .. ./.. ./ dev /dev "./a b"; do
@@ -44,6 +45,6 @@ done
 
 inputs_setup . '["github.com/a/b\n::warning::forged"]'
 run "flake-lock-inputs: rejects a source that would forge a command" fail "$script"
-expect no-command warning
-[[ ! -s $GITHUB_OUTPUT ]] || report "unexpected outputs: $(cat "$GITHUB_OUTPUT")"
+expect warnings 0
+[[ ! -s $work/output ]] || report "unexpected outputs: $(cat "$work/output")"
 finish
