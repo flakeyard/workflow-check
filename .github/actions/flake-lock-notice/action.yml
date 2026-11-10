@@ -4,6 +4,9 @@ description: >-
   switched off or does not apply because there is no flake, and when its
   check of the end of life of nixpkgs is switched off.
 inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
   enabled:
     description: "'false' switches the check off; it then succeeds with a notice."
     default: "true"
@@ -20,6 +23,7 @@ runs:
   steps:
     - shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         ENABLED: ${{ inputs.enabled }}
         FLAKE: ${{ inputs.flake }}
         NIXPKGS_EOL: ${{ inputs.nixpkgs-eol }}

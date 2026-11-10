@@ -13,6 +13,9 @@ self_test() { workflow_check "$self_workflow" "check-self.yaml: $1" "$2"; }
 if require_yq check-self.yaml; then
   self_workflow=$(load_workflow check-self.yaml)
   self_test "no permissions at the top level" '.permissions == {}'
+  self_test "the fixtures call the library once and pass it to the action" \
+    '(library_jobs | length == 1 and all(calls_library_once and library_runs_with_later_steps))
+    and actions_get_library'
   self_test "the job check calls the product workflow of this commit, unnamed" \
     '.jobs.check | .uses == "$/.github/workflows/check.yaml" and (has("name") | not)'
   self_test "check needs every other job and passes their results" \

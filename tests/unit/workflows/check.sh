@@ -4,13 +4,15 @@
 # references they use and the conditions that decide which jobs may be
 # skipped.
 
+: "${root:?}"
+
 # The jobs of the workflow, sorted.
 readonly CHECK_JOBS='["flake","meta","pending","required"]'
 # The checks of meta that an input switches, in their order.
 readonly SWITCHED_CHECKS='["pr-title","renovate-config","release-tags","flake-lock"]'
 # The steps of flake, in their order: the check of flake.lock comes right
 # after Nix is installed and before the flake is evaluated.
-readonly FLAKE_STEPS='["actions/checkout@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks"]'
+readonly FLAKE_STEPS='["actions/checkout@","flakeyard/action-shell-lib@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks"]'
 readonly FLAKE_LOCK_CONDITION='${{ inputs.flake-lock }}'
 readonly NIXPKGS_EOL_INPUT='${{ inputs.nixpkgs-eol }}'
 readonly DISPATCHED="github.event_name == 'workflow_dispatch'"
@@ -61,7 +63,15 @@ if require_yq check.yaml; then
     "[.jobs.required.steps[] | select(.uses == \"\$/.github/actions/commit-status\" or .id == \"context\") | condition]
     | length == 2 and all(startswith(\"\${{ always() && \"))"
   check_test "every check of meta runs also when another one failed" \
-    '.jobs.meta.steps[1:] | all(condition == "${{ !cancelled() }}")'
+    '.jobs.meta.steps | .[(map(.uses) | index("$/.github/actions/preflight")) + 1:]
+    | all(condition == "${{ !cancelled() }}")'
+  check_test "every job that runs actions of this repository calls the library once" \
+    'library_jobs | length == 4 and all(calls_library_once)'
+  check_test "every action of this repository gets the library of its job" 'actions_get_library'
+  check_test "every use of the library names one commit" \
+    '[steps[] | select(library) | .uses] | unique | length == 1'
+  check_test "the library runs whenever a later step of its job runs" \
+    'library_jobs | all(library_runs_with_later_steps)'
   check_test "every check of meta is switched by a boolean input, true by default" \
     "$SWITCHED_CHECKS"' as $names
     | [.jobs.meta.steps[] | .with.enabled // empty] == [$names[] | "${{ inputs.\(.) }}"]
@@ -85,10 +95,18 @@ if require_yq check.yaml; then
     "nixpkgs-eol": "'"$NIXPKGS_EOL_INPUT"'"}'
   check_test "the inputs of the check of flake.lock are those of the workflow" \
     '.jobs.flake.steps[] | select(.id == "flake-lock-inputs") | .with
-    == {"flake": "${{ inputs.flake }}", "allow-duplicates": "${{ inputs.allow-duplicates }}"}'
+    | del(.["shell-lib"]) == {"flake": "${{ inputs.flake }}", "allow-duplicates": "${{ inputs.allow-duplicates }}"}'
   check_test "allow-duplicates is a JSON array, empty by default" \
     '.on.workflow_call.inputs["allow-duplicates"] | .type == "string" and .default == "[]"'
   check_test "flake-checks runs also when the check of flake.lock failed" \
     '[.jobs.flake.steps[] | select(.uses == "$/.github/actions/flake-checks") | condition]
     == ["${{ !cancelled() }}"]'
+
+  # The actions get the library from the job; they do not call it (ADR-0003).
+  for action in "$root"/.github/actions/*/action.yml; do
+    name=${action#"$root/.github/actions/"}
+    workflow_check "$(yq -o=json . "$action")" "${name%/action.yml}: gets the library as SHELL_LIB" \
+      '(.inputs["shell-lib"].required == true)
+      and (.runs.steps | all(library | not) and all(.env.SHELL_LIB == "${{ inputs.shell-lib }}"))'
+  done
 fi

@@ -3,6 +3,9 @@ description: >-
   Evaluates a flake and builds its checks for the system of the runner, after
   checking that the runners given cover exactly the systems the flake declares.
 inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
   flake:
     description: The flake, "." or a relative path such as ./dev.
     required: true
@@ -20,6 +23,7 @@ runs:
   steps:
     - shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         FLAKE: ${{ inputs.flake }}
         SYSTEM: ${{ inputs.system }}
         SYSTEMS: ${{ inputs.systems }}

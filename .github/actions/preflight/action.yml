@@ -1,9 +1,14 @@
 name: Preflight
 description: Fails unless the caller's event is one that the check workflow supports.
+inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
 runs:
   using: composite
   steps:
     - shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         EVENT: ${{ github.event_name }}
       run: '"$GITHUB_ACTION_PATH/run.sh"'

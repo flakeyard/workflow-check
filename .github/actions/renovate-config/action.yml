@@ -3,6 +3,9 @@ description: >-
   Fails unless renovate.json is the only Renovate configuration of the
   repository and extends a preset of one of the given repositories.
 inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
   enabled:
     description: "'false' switches the check off; it then succeeds with a notice."
     default: "true"
@@ -16,6 +19,7 @@ runs:
   steps:
     - shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         SHA: ${{ github.sha }}

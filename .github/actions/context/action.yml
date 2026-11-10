@@ -4,6 +4,9 @@ description: >-
   this action: "check / pending" and "check / required" both give
   "check / required".
 inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
   check-run-id:
     description: The check run id of the job, job.check_run_id.
     required: true
@@ -17,6 +20,7 @@ runs:
     - id: run
       shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         CHECK_RUN_ID: ${{ inputs.check-run-id }}

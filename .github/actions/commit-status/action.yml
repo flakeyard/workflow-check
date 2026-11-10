@@ -3,6 +3,9 @@ description: >-
   Posts a commit status on the checked commit for a run started by
   workflow_dispatch, whose check runs do not count for required checks.
 inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
   state:
     description: pending, success or failure.
     required: true
@@ -14,6 +17,7 @@ runs:
   steps:
     - shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         SHA: ${{ github.sha }}

@@ -206,7 +206,9 @@ private repository of another owner reads as missing.
 ## Requirements
 
 GitHub-hosted Ubuntu runners, x86_64 and arm64: the steps that call the API use
-their `bash`, `gh`, `jq` and GNU coreutils (`base64`, `mktemp`).
+their `bash`, `gh`, `jq` and GNU coreutils (`base64`, `mktemp`). Every job
+starts [action-shell-lib][action-shell-lib], which fails the job on any other
+runner.
 
 ## Development
 
@@ -234,6 +236,12 @@ referenced with `$/`:
 - `required`: the verdict over the jobs of the caller and of the workflow,
   cross-checked against the jobs of the run attempt; its rules are the named
   `def`s of `required/verdict.jq`.
+
+Each job that runs these actions calls [action-shell-lib][action-shell-lib]
+once, as its first step after the checkout if it has one, and passes its output
+`path` to each of them as the input `shell-lib`, which the action gives to its
+script as `SHELL_LIB`; the actions do not call the library themselves
+([ADR-0003](docs/adr/records/0003-shell-library-and-end-of-life.md)).
 
 The actions run their `run.sh` and source the helpers in `lib`: `lib/github/`
 calls the GitHub API (`api.sh`, which tells a missing resource from an error,
@@ -298,3 +306,4 @@ not released yet. Until they are:
 [MIT](LICENSE).
 
 [action-flake-lock]: https://github.com/flakeyard/action-flake-lock
+[action-shell-lib]: https://github.com/flakeyard/action-shell-lib
