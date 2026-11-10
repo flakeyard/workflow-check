@@ -4,6 +4,9 @@ description: >-
   allowed to be skipped, and every other job of the run attempt has completed
   without failing.
 inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
   caller:
     description: The needs of the caller job, toJSON(needs), as the caller passed it.
     required: true
@@ -24,6 +27,7 @@ runs:
   steps:
     - shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         RUN_ID: ${{ github.run_id }}

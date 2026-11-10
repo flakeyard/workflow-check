@@ -3,6 +3,9 @@ description: >-
   Fails unless the title of the pull request, or of every open pull request of
   a dispatched branch, follows Conventional Commits with the given types.
 inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
   enabled:
     description: "'false' switches the check off; it then succeeds with a notice."
     default: "true"
@@ -14,6 +17,7 @@ runs:
   steps:
     - shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         EVENT: ${{ github.event_name }}

@@ -4,6 +4,9 @@ description: >-
   action-flake-lock: the lock file of the flake, and allow-duplicates as a
   newline list.
 inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
   flake:
     description: The flake, "." or a relative path such as ./dev.
     required: true
@@ -23,6 +26,7 @@ runs:
     - id: run
       shell: bash
       env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
         FLAKE: ${{ inputs.flake }}
         ALLOW_DUPLICATES: ${{ inputs.allow-duplicates }}
       run: '"$GITHUB_ACTION_PATH/run.sh"'
