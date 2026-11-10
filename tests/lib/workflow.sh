@@ -18,7 +18,8 @@ readonly CHECK_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":
 # Helpers of the expressions of workflow_check. A job that runs an action of
 # this repository calls the library once, as its first step after the
 # checkout if it has one, with the id lib, and passes its path to every such
-# action (ADR-0003).
+# action (ADR-0003). Its condition is at least as permissive as that of any
+# later step: always() over !cancelled() over none.
 readonly WORKFLOW_DEFS='
   def condition: (.if // "") | gsub("\\s+"; " ");
   def steps: [.jobs[] | .steps // [] | .[]];
@@ -30,6 +31,14 @@ readonly WORKFLOW_DEFS='
     library_index as $index
     | (.steps | map(library) | indices(true)) == [$index] and .steps[$index].id == "lib";
   def library_jobs: [.jobs[] | select(.steps // [] | any(own_action))];
+  def run_rank:
+    condition as $condition
+    | if $condition | contains("always()") then 2
+      elif $condition | contains("!cancelled()") then 1
+      else 0 end;
+  def library_runs_with_later_steps:
+    library_index as $index
+    | (.steps[$index] | run_rank) >= ([.steps[$index + 1:][] | run_rank] | max // 0);
   def actions_get_library:
     [steps[] | select(own_action) | .with["shell-lib"]] | all(. == "${{ steps.lib.outputs.path }}");
 '

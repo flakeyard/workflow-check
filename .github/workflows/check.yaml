@@ -122,7 +122,7 @@ jobs:
       statuses: write # the commit status of a dispatched run
     steps:
       - id: lib
-        uses: flakeyard/action-shell-lib@3bad257f744402ce4627954c4250171150ffb54d # v0.1.1
+        uses: flakeyard/action-shell-lib@4c8422d8a7fdb2b097b349f643efa8d196e0406b # v0.1.2
       - id: context
         uses: $/.github/actions/context
         with:
@@ -141,10 +141,12 @@ jobs:
     permissions:
       contents: read # repository files through the contents API
       pull-requests: read # the title of the pull request
-    # Every check runs also when another one failed.
+    # Every check runs also when another one failed, and the library step
+    # whenever a check does.
     steps:
       - id: lib
-        uses: flakeyard/action-shell-lib@3bad257f744402ce4627954c4250171150ffb54d # v0.1.1
+        if: ${{ !cancelled() }}
+        uses: flakeyard/action-shell-lib@4c8422d8a7fdb2b097b349f643efa8d196e0406b # v0.1.2
       - uses: $/.github/actions/preflight
         with:
           shell-lib: ${{ steps.lib.outputs.path }}
@@ -194,7 +196,8 @@ jobs:
         with:
           persist-credentials: false
       - id: lib
-        uses: flakeyard/action-shell-lib@3bad257f744402ce4627954c4250171150ffb54d # v0.1.1
+        if: ${{ !cancelled() }}
+        uses: flakeyard/action-shell-lib@4c8422d8a7fdb2b097b349f643efa8d196e0406b # v0.1.2
       - id: flake-lock-inputs
         if: ${{ inputs.flake-lock }}
         uses: $/.github/actions/flake-lock-inputs
@@ -233,8 +236,10 @@ jobs:
       actions: read # the name of this job and the jobs of the run
       statuses: write # the commit status of a dispatched run
     steps:
+      # Also in a cancelled run, so that the final status gets the library.
       - id: lib
-        uses: flakeyard/action-shell-lib@3bad257f744402ce4627954c4250171150ffb54d # v0.1.1
+        if: ${{ always() }}
+        uses: flakeyard/action-shell-lib@4c8422d8a7fdb2b097b349f643efa8d196e0406b # v0.1.2
       - id: verdict
         uses: $/.github/actions/required
         with:

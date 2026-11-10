@@ -70,6 +70,8 @@ if require_yq check.yaml; then
   check_test "every action of this repository gets the library of its job" 'actions_get_library'
   check_test "every use of the library names one commit" \
     '[steps[] | select(library) | .uses] | unique | length == 1'
+  check_test "the library runs whenever a later step of its job runs" \
+    'library_jobs | all(library_runs_with_later_steps)'
   check_test "every check of meta is switched by a boolean input, true by default" \
     "$SWITCHED_CHECKS"' as $names
     | [.jobs.meta.steps[] | .with.enabled // empty] == [$names[] | "${{ inputs.\(.) }}"]
