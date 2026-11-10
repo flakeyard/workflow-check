@@ -17,7 +17,8 @@ tags_setup() {
 # answers_setup FILE ANSWERS: the Copier answers FILE at the root.
 answers_setup() {
   local file=$1 answers=$2
-  fixture "repos/$REPO/contents?ref=$SHA" "$(jq -n --arg file "$file" '[{type: "file", name: $file}]')"
+  fixture "repos/$REPO/contents?ref=$SHA" \
+    "$(jq -n --arg file "$file" '[{type: "file", name: $file}, {type: "dir", name: ".copier-answers.d.yml"}]')"
   file_fixture "$file" "$answers"
 }
 
@@ -148,6 +149,15 @@ setup
 apply ENABLED=false ALLOW_UNPINNED='[]'
 run "release-tags: switched off" ok "$script"
 expect message "::notice::the release tag check is off"
+finish
+
+# More presets that fail than annotations of a kind: the last one counts the
+# rest.
+tags_setup "$(jq -n '{extends: [range(12) | "github>o/p\(.)"]}')"
+run "release-tags: the errors beyond the annotations of a step are counted" fail "$script"
+expect message "github>o/p8: not pinned"
+expect no-message "github>o/p9: not pinned"
+expect message "3 more errors are not shown here."
 finish
 
 tags_setup '{"extends":[]}'

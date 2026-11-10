@@ -69,6 +69,19 @@ run "renovate-config: package.json with a configuration" fail "$script"
 expect message "remove the key renovate of package.json"
 finish
 
+# Every other configuration and no renovate.json: as many errors as a step
+# writes, the last one included.
+setup
+apply ENABLED=true PRESETS='[]'
+for other in renovate.json5 .renovaterc .renovaterc.json .renovaterc.json5 \
+  .github/renovate.json .github/renovate.json5 .gitlab/renovate.json .gitlab/renovate.json5; do
+  file_fixture "$other" '{}'
+done
+file_fixture package.json '{"renovate":{}}'
+run "renovate-config: the tenth error is written" fail "$script"
+expect message "renovate.json is missing"
+finish
+
 renovate_setup "$FLAKEYARD_CONFIG"
 file_fixture package.json '{"name":"x"}'
 run "renovate-config: package.json without a configuration" ok "$script"

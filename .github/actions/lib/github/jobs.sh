@@ -1,8 +1,9 @@
-# shellcheck shell=bash source-path=SCRIPTDIR
-# Jobs of workflow runs of REPO. Source this file; it expects REPO.
+# shellcheck shell=bash
+# Jobs of workflow runs of REPO. Source this file; it expects REPO and
+# SHELL_LIB, the directory of the shell library.
 
-# shellcheck source=api.sh
-source "${BASH_SOURCE[0]%/*}/api.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/github/api.sh"
 
 # A check run id, which is also the id of its job, a run id or the number of
 # an attempt.

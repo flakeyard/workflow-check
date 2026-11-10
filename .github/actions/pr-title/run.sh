@@ -4,17 +4,15 @@
 # workflow_dispatch those of every open pull request of BRANCH. Titles are read
 # from the API, so a rerun after the title was fixed passes. Other events have
 # no pull request; ENABLED=false switches the check off.
-# shellcheck source-path=SCRIPTDIR
 set -euo pipefail
 shopt -s inherit_errexit
 # Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
 export LC_ALL=C.UTF-8
-: "${REPO:?}" "${EVENT?}" "${ENABLED:?}" "${TYPES?}"
-lib=$(dirname "$0")/../lib
-# shellcheck source=../lib/github/api.sh
-source "$lib/github/api.sh"
-# shellcheck source=../lib/report.sh
-source "$lib/report.sh"
+: "${SHELL_LIB:?}" "${REPO:?}" "${EVENT?}" "${ENABLED:?}" "${TYPES?}"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/github/api.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/report.sh"
 
 readonly TYPES_FORM='^[a-z]+( [a-z]+)*$'
 readonly NUMBER_FORM='^[1-9][0-9]*$'
@@ -33,15 +31,14 @@ is_single_line() {
 }
 
 # check_title NUMBER TITLE: report whether pull request NUMBER has a title
-# that follows the rule.
+# that follows the rule; a problem when it does not.
 check_title() {
   local number=$1 title=$2
   if is_single_line "$title" && [[ $title =~ $rule ]]; then
     summary "pull request #$number: $(code_span "$title")"
-    return 0
+  else
+    problem "pull request #$number: the title \"$title\" does not follow Conventional Commits, <type>[(<scope>)][!]: <description> with a type of: $TYPES"
   fi
-  error "pull request #$number: the title \"$title\" does not follow Conventional Commits, <type>[(<scope>)][!]: <description> with a type of: $TYPES"
-  return 1
 }
 
 # check_pull_request NUMBER: check the title of pull request NUMBER.
@@ -54,7 +51,7 @@ check_pull_request() {
 
 # check_branch: check the titles of the open pull requests of BRANCH.
 check_branch() {
-  local head pulls status=0 pull
+  local head pulls pull
   head=$(jq -rn --arg head "$OWNER:$BRANCH" '$head | @uri')
   pulls=$(gh api --paginate "repos/$REPO/pulls?state=open&head=$head&per_page=100" \
     --jq '.[] | {number, title} | @json') || fail "cannot list the pull requests of $BRANCH"
@@ -63,9 +60,8 @@ check_branch() {
     return 0
   fi
   while IFS= read -r pull; do
-    check_title "$(jq -r .number <<<"$pull")" "$(jq -r .title <<<"$pull")" || status=1
+    check_title "$(jq -r .number <<<"$pull")" "$(jq -r .title <<<"$pull")"
   done <<<"$pulls"
-  return "$status"
 }
 
 if [[ $ENABLED != true ]]; then
@@ -79,3 +75,5 @@ case $EVENT in
   workflow_dispatch) check_branch ;;
   *) notice "not a pull request; no title to check" ;;
 esac
+flush
+! has_problems

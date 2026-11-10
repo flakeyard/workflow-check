@@ -11,13 +11,13 @@ set -euo pipefail
 shopt -s inherit_errexit
 # Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
 export LC_ALL=C.UTF-8
-: "${REPO:?}" "${RUN_ID:?}" "${RUN_ATTEMPT:?}" "${CHECK_RUN_ID?}"
+: "${SHELL_LIB:?}" "${REPO:?}" "${RUN_ID:?}" "${RUN_ATTEMPT:?}" "${CHECK_RUN_ID?}"
 : "${CALLER?}" "${CHECK:?}" "${CALLER_MAY_SKIP:?}" "${CHECK_MAY_SKIP:?}"
 lib=$(dirname "$0")/../lib
 # shellcheck source=../lib/github/jobs.sh
 source "$lib/github/jobs.sh"
-# shellcheck source=../lib/report.sh
-source "$lib/report.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/report.sh"
 
 # shellcheck disable=SC2016 # The expression is the text the caller writes.
 readonly NEEDS_HINT='pass needs: ${{ toJSON(needs) }} in the call'
