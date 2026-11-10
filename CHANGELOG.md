@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/flakeyard/workflow-check/compare/v0.2.0...v0.3.0) (2026-11-10)
+
+
+### Features
+
+* check the end of life of nixpkgs with action-flake-lock ([#48](https://github.com/flakeyard/workflow-check/issues/48)) ([2d27d8c](https://github.com/flakeyard/workflow-check/commit/2d27d8c8f119187807da4278e302b8d7850c0b26))
+
+
+### Bug Fixes
+
+* call the shell library once in every job ([#49](https://github.com/flakeyard/workflow-check/issues/49)) ([b3df11b](https://github.com/flakeyard/workflow-check/commit/b3df11b69714fdab290d871cc7aedd9877ebc23e))
+* **deps:** update flakeyard/action-flake-lock action to v0.2.0 ([#46](https://github.com/flakeyard/workflow-check/issues/46)) ([c6ef272](https://github.com/flakeyard/workflow-check/commit/c6ef272554d1c28a50ed5030ad5514069ee1f5f1))
+* source report, API, contents and forms from the shell library ([#50](https://github.com/flakeyard/workflow-check/issues/50)) ([7c7ac98](https://github.com/flakeyard/workflow-check/commit/7c7ac98721eaca4dc26ef3f960f92903f17bb37e))
+
 ## [0.2.0](https://github.com/flakeyard/workflow-check/compare/v0.1.2...v0.2.0) (2026-11-10)
 
 
