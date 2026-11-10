@@ -8,16 +8,16 @@ set -euo pipefail
 shopt -s inherit_errexit
 # Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
 export LC_ALL=C.UTF-8
-: "${REPO:?}" "${SHA:?}" "${ENABLED:?}" "${PRESETS?}"
+: "${SHELL_LIB:?}" "${REPO:?}" "${SHA:?}" "${ENABLED:?}" "${PRESETS?}"
 lib=$(dirname "$0")/../lib
-# shellcheck source=../lib/github/contents.sh
-source "$lib/github/contents.sh"
-# shellcheck source=../lib/github/repository.sh
-source "$lib/github/repository.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/github/contents.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/github/forms.sh"
 # shellcheck source=../lib/renovate.sh
 source "$lib/renovate.sh"
-# shellcheck source=../lib/report.sh
-source "$lib/report.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/report.sh"
 
 readonly CONFIG=renovate.json
 # The other files that Renovate reads its configuration from.
@@ -98,5 +98,6 @@ fi
 check_presets_input
 check_other_configs
 check_renovate_json
-((problems == 0)) || exit 1
+flush
+! has_problems || exit 1
 summary "$(code_span "$CONFIG") is the only Renovate configuration and extends a listed preset"

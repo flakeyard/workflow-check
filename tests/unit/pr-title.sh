@@ -98,6 +98,14 @@ run "pr-title: a dispatched run checks the pull request of its branch" ok "$scri
 expect summary "pull request #7"
 finish
 
+# More bad titles than annotations of a kind: the last one counts the rest.
+dispatch_setup "$(jq -n '[range(1; 12) | {number: ., title: "bad"}]')"
+run "pr-title: the errors beyond the annotations of a step are counted" fail "$script"
+expect message "pull request #9: the title"
+expect no-message "pull request #10: the title"
+expect message "2 more errors are not shown here."
+finish
+
 dispatch_setup '[{"number":7,"title":"chore(main): release 0.2.0"},{"number":8,"title":"Release"}]'
 run "pr-title: a dispatched run checks every pull request of its branch" fail "$script"
 expect message "pull request #8: the title"

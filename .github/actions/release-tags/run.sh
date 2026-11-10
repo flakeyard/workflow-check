@@ -10,16 +10,18 @@ set -euo pipefail
 shopt -s inherit_errexit
 # Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
 export LC_ALL=C.UTF-8
-: "${REPO:?}" "${SHA:?}" "${ENABLED:?}" "${ALLOW_UNPINNED?}"
+: "${SHELL_LIB:?}" "${REPO:?}" "${SHA:?}" "${ENABLED:?}" "${ALLOW_UNPINNED?}"
 lib=$(dirname "$0")/../lib
-# shellcheck source=../lib/github/contents.sh
-source "$lib/github/contents.sh"
-# shellcheck source=../lib/github/repository.sh
-source "$lib/github/repository.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/github/api.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/github/contents.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/github/forms.sh"
 # shellcheck source=../lib/renovate.sh
 source "$lib/renovate.sh"
-# shellcheck source=../lib/report.sh
-source "$lib/report.sh"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/report.sh"
 
 readonly CONFIG=renovate.json
 readonly ANSWERS_FILE='^\.copier-answers.*\.yml$'
@@ -121,9 +123,17 @@ check_template() {
   fi
 }
 
+# root_files: print the names of the files at the root of REPO at SHA, one per
+# line.
+root_files() {
+  local listing
+  listing=$(api_get "repos/$REPO/contents?ref=$SHA") || return 1
+  jq -r '.[] | select(.type == "file") | .name' <<<"$listing"
+}
+
 check_templates() {
   local files file
-  files=$(root_files "$SHA") || fail "cannot list the files of $REPO at $SHA"
+  files=$(root_files) || fail "cannot list the files of $REPO at $SHA"
   while IFS= read -r file; do
     [[ ! $file =~ $ANSWERS_FILE ]] || check_template "$file"
   done <<<"$files"
@@ -138,4 +148,5 @@ summary "| Reference | Immutable release |"
 summary "| --- | --- |"
 check_presets
 check_templates
-((problems == 0))
+flush
+! has_problems

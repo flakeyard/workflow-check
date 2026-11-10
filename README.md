@@ -243,14 +243,15 @@ once, as its first step after the checkout if it has one, and passes its output
 script as `SHELL_LIB`; the actions do not call the library themselves
 ([ADR-0003](docs/adr/records/0003-shell-library-and-end-of-life.md)).
 
-The actions run their `run.sh` and source the helpers in `lib`: `lib/github/`
-calls the GitHub API (`api.sh`, which tells a missing resource from an error,
-`contents.sh`, which reads repository files at the checked commit, and
-`jobs.sh`, which reads the name of a job and the jobs of a run attempt) and
-holds the form of repository names and lists of them (`repository.sh`),
-`lib/flake.sh` holds the form of the input `flake`, `lib/renovate.sh` reads
-presets of a Renovate configuration, and `lib/report.sh` reports errors, notices
-and lines of the job summary, escaping the text it is given.
+The actions run their `run.sh`, which sources modules of the library from
+`SHELL_LIB`: `report.sh` reports errors, notices and lines of the job summary,
+escaping the text it is given, `github/api.sh` calls the GitHub API and tells a
+missing resource from an error, `github/contents.sh` reads repository files at
+the checked commit and `github/forms.sh` holds the form of repository names and
+lists of them. Helpers that only this repository uses are in `lib`:
+`lib/github/jobs.sh` reads the name of a job and the jobs of a run attempt,
+`lib/flake.sh` holds the form of the input `flake` and `lib/renovate.sh` reads
+presets of a Renovate configuration.
 
 `tests/run.sh` tests the scripts with the stubs of `gh` and `nix` in
 `tests/bin`; the suites in `tests/unit` mirror the actions and the helpers and
@@ -259,7 +260,10 @@ jobs of the workflow: their permissions, references, conditions and which of
 them may be skipped; `tests/unit/workflows/check-self.sh` checks that the
 repository's own CI calls the workflow as every caller must. They read the
 workflows with mikefarah `yq` v4, which GitHub-hosted runners have, and fail
-without it; locally, run `nix shell nixpkgs#yq-go -c tests/run.sh`.
+without it. The scripts need the library at the commit that `check.yaml` pins:
+`checks.unit` of the flake fetches it, and a direct run takes it from
+`SHELL_LIB`, such as
+`SHELL_LIB=<checkout> nix shell nixpkgs#yq-go -c tests/run.sh`.
 
 The repository checks itself with
 [`check-self.yaml`](.github/workflows/check-self.yaml), which calls the workflow

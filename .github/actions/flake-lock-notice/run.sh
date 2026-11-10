@@ -5,13 +5,11 @@
 # either. When the check runs, emits a notice when NIXPKGS_EOL=false switches
 # off its check of the end of life. The check itself is a step of the flake
 # jobs, which have no notice of their own.
-# shellcheck source-path=SCRIPTDIR
 set -euo pipefail
 shopt -s inherit_errexit
-: "${ENABLED:?}" "${FLAKE?}" "${NIXPKGS_EOL:?}"
-lib=$(dirname "$0")/../lib
-# shellcheck source=../lib/report.sh
-source "$lib/report.sh"
+: "${SHELL_LIB:?}" "${ENABLED:?}" "${FLAKE?}" "${NIXPKGS_EOL:?}"
+# shellcheck source=/dev/null
+source "$SHELL_LIB/report.sh"
 
 if [[ $ENABLED != true ]]; then
   notice "the flake.lock check is off, and with it the end-of-life check of nixpkgs"

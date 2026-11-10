@@ -3,13 +3,15 @@
 # in tests/unit mirror the actions: one file per action, and one per helper
 # under tests/unit/lib; tests/unit/scripts has one file per script of
 # scripts/; tests/unit/workflows has one file per workflow and needs yq.
-# Usage: tests/run.sh
+# The scripts source the shell library from SHELL_LIB, which must be
+# action-shell-lib at the commit pinned in .github/workflows/check.yaml;
+# checks.unit of the flake sets it.
+# Usage: SHELL_LIB=DIR tests/run.sh
 # shellcheck source-path=SCRIPTDIR
 set -uo pipefail
 shopt -s globstar
 
-# Retries of the GitHub API do not wait in tests.
-export API_RETRY_DELAY=0
+export SHELL_LIB=${SHELL_LIB:?the directory of action-shell-lib at the commit pinned in check.yaml}
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 # shellcheck source=lib/case.sh
