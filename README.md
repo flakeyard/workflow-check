@@ -80,11 +80,15 @@ rulesets of the repository. Reference the workflow by full commit SHA, as above.
   release `vX.Y.Z` of the major version its `ref` names, no source is locked
   twice unless it is in `allow-duplicates`, and every input of the root is
   pinned as
-  `git+https://github.com/<owner>/<repo>?ref=<ref>&rev=<commit>&shallow=1`. The
-  action builds its own tools and evaluates only its own flake. It reports every
-  problem in the job summary and as annotations, once per system, and fails the
-  job; the flake checks still run. With `flake-lock: false` or `flake: ""`, the
-  job `meta` emits a notice instead.
+  `git+https://github.com/<owner>/<repo>?ref=<ref>&rev=<commit>&shallow=1`.
+  Unless `nixpkgs-eol` is `false`, it also checks the end of life of the nixpkgs
+  branch of every input of the root: it warns from 30 days before it, and after
+  it fails runs of the caller's `schedule` event and warns in every other run.
+  The action builds its own tools and evaluates only its own flake. It reports
+  every problem in the job summary and as annotations, once per system, and
+  fails the job; the flake checks still run. With `flake-lock: false` or
+  `flake: ""`, which also leave out the end of life, or `nixpkgs-eol: false`,
+  the job `meta` emits a notice instead.
 - **Flake checks.** On every system of `systems`, the job
   `flake (<system>, <runner>)` checks out the repository, installs Nix with
   [action-setup-nix](https://github.com/flakeyard/action-setup-nix), checks that
@@ -150,6 +154,8 @@ that is switched off by its input succeeds with a notice.
   `flake.lock` may lock more than once, such as `github.com/nixos/nixpkgs` or
   `github.com/<owner>/<repo>?dir=<dir>`, for example a second nixpkgs for a
   broken tool.
+- `nixpkgs-eol` (default `true`): check the end of life of the nixpkgs branches
+  of `flake.lock` with action-flake-lock.
 
 The workflow takes no secrets and has no outputs.
 
@@ -216,8 +222,8 @@ referenced with `$/`:
   preset of the given repositories;
 - `release-tags`: every Renovate preset and Copier template is pinned to the tag
   of an immutable GitHub release;
-- `flake-lock-notice`: a notice in `meta` when the check of `flake.lock` is
-  switched off or there is no flake;
+- `flake-lock-notice`: a notice in `meta` when the check of `flake.lock` or its
+  check of the end of life of nixpkgs is switched off, or there is no flake;
 - `flake-lock-inputs`: the lock file of the flake and `allow-duplicates` as the
   newline list of action-flake-lock;
 - `flake-checks`: the flake evaluates and its checks build natively, on runners

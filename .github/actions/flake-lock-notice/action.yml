@@ -1,7 +1,8 @@
 name: Flake lock notice
 description: >-
   Emits a notice when the check of flake.lock, a step of the flake jobs, is
-  switched off or does not apply because there is no flake.
+  switched off or does not apply because there is no flake, and when its
+  check of the end of life of nixpkgs is switched off.
 inputs:
   enabled:
     description: "'false' switches the check off; it then succeeds with a notice."
@@ -9,6 +10,11 @@ inputs:
   flake:
     description: The flake, "." or a relative path such as ./dev; empty for none.
     required: true
+  nixpkgs-eol:
+    description: >-
+      'false' switches the check of the end of life of nixpkgs off; it then
+      succeeds with a notice.
+    default: "true"
 runs:
   using: composite
   steps:
@@ -16,4 +22,5 @@ runs:
       env:
         ENABLED: ${{ inputs.enabled }}
         FLAKE: ${{ inputs.flake }}
+        NIXPKGS_EOL: ${{ inputs.nixpkgs-eol }}
       run: '"$GITHUB_ACTION_PATH/run.sh"'

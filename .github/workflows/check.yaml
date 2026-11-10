@@ -101,6 +101,14 @@ on:
           than once, such as github.com/nixos/nixpkgs.
         type: string
         default: "[]"
+      nixpkgs-eol:
+        description: >-
+          Check with action-flake-lock that the nixpkgs branches of flake.lock
+          have not reached their end of life: a warning from 30 days before
+          it, a failure after it in scheduled runs. false switches the check
+          off; it then succeeds with a notice.
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -147,12 +155,14 @@ jobs:
         with:
           enabled: ${{ inputs.release-tags }}
           allow-unpinned: ${{ inputs.allow-unpinned }}
-      # The check of flake.lock runs in the flake jobs.
+      # The check of flake.lock, with the end of life of nixpkgs, runs in the
+      # flake jobs.
       - if: ${{ !cancelled() }}
         uses: $/.github/actions/flake-lock-notice
         with:
           enabled: ${{ inputs.flake-lock }}
           flake: ${{ inputs.flake }}
+          nixpkgs-eol: ${{ inputs.nixpkgs-eol }}
 
   flake:
     # No name: GitHub names each job after its matrix values, and a job
@@ -188,6 +198,7 @@ jobs:
         with:
           path: ${{ steps.flake-lock-inputs.outputs.path }}
           allow-duplicates: ${{ steps.flake-lock-inputs.outputs.allow-duplicates }}
+          nixpkgs-eol: ${{ inputs.nixpkgs-eol }}
       # Also when the check of flake.lock failed, so that one run reports both.
       - if: ${{ !cancelled() }}
         uses: $/.github/actions/flake-checks
