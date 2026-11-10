@@ -83,12 +83,13 @@ and passes the output `path` to its internal actions as an input, which their
 not call the library themselves, so the `uses:` pin of the library appears once
 per job, all at the same commit, and not in every internal `action.yml`.
 
-A module of `.github/actions/lib` moves to the library when another repository
-uses it too; the copies of `report.sh`, `api.sh` and `contents.sh`, and the
-forms of repositories and flakes, are such modules. A module that only
-workflow-check uses stays here. The stubs and the harness of the tests move to
-the library's `internal/testing/` on the same terms; tests take the library's
-source at the commit pinned in `check.yaml`.
+A module of `.github/actions/lib` moves to the library only when another
+repository uses it too; the copies of `report.sh`, `api.sh` and `contents.sh`,
+and the forms of repositories, are such modules. A module that only
+workflow-check uses stays here, such as the form of flakes in `flake.sh`. The
+stubs and the harness of the tests move to the library's `internal/testing/` on
+the same terms; tests take the library's source at the commit pinned in
+`check.yaml`.
 
 workflow-check pins action-setup-nix and action-flake-lock, which pin the
 library themselves. A change of the library is released first in the library,
