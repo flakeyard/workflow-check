@@ -1,13 +1,13 @@
 # shellcheck shell=bash
 # Tests of pr-title.
 
-script=pr-title/run.sh
+script=.github/actions/pr-title/run.sh
 readonly DEFAULT_TYPES="feat fix docs chore ci refactor test build perf revert"
 branch_pulls="repos/o/r/pulls?state=open&head=o%3Arelease-please--branches--main&per_page=100"
 
 # title_setup TITLE: a pull_request run of pull request 5 with TITLE.
 title_setup() {
-  setup
+  action_setup
   apply EVENT=pull_request NUMBER=5 ENABLED=true TYPES="$DEFAULT_TYPES"
   fixture "repos/$REPO/pulls/5" "$(jq -n --arg title "$1" '{number: 5, title: $title}')"
 }
@@ -33,7 +33,7 @@ done
 
 if has_wide_ranges; then
   title_setup "chore(méin): release 0.2.0"
-  apply LC_ALL="$WIDE_LOCALE"
+  apply_wide_locale
   run "pr-title: rejects a scope beyond ASCII in $WIDE_LOCALE" fail "$script"
   expect message "pull request #5: the title"
   finish
@@ -41,7 +41,7 @@ fi
 
 title_setup $'feat: one\n::warning::forged'
 run "pr-title: a title cannot forge a command" fail "$script"
-expect no-command warning
+expect warnings 0
 finish
 
 title_setup "docs: explain"
@@ -66,7 +66,7 @@ expect message "::notice::the pull request title check is off"
 finish
 
 for event in push schedule; do
-  setup
+  action_setup
   apply EVENT="$event" ENABLED=true TYPES="$DEFAULT_TYPES"
   run "pr-title: nothing to check on $event" ok "$script"
   expect message "::notice::not a pull request"
@@ -78,7 +78,7 @@ apply NUMBER="5/../6"
 run "pr-title: rejects a pull request number that is not one" fail "$script"
 finish
 
-setup
+action_setup
 apply EVENT=pull_request NUMBER=5 ENABLED=true TYPES="$DEFAULT_TYPES"
 fixture "repos/$REPO/pulls/5" "HTTP 500"
 run "pr-title: an API error fails" fail "$script"
@@ -87,7 +87,7 @@ finish
 # dispatch_setup PULLS: a dispatched run of the release branch, whose open
 # pull requests are PULLS.
 dispatch_setup() {
-  setup
+  action_setup
   apply EVENT=workflow_dispatch OWNER=o BRANCH=release-please--branches--main \
     ENABLED=true TYPES="$DEFAULT_TYPES"
   fixture "$branch_pulls" "$1"

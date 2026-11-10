@@ -1,15 +1,15 @@
 # shellcheck shell=bash
 # Tests of renovate-config.
 
-script=renovate-config/run.sh
+script=.github/actions/renovate-config/run.sh
 readonly FLAKEYARD_CONFIG='{"extends":["github>flakeyard/renovate-config//internal/workflow#v0.1.0"]}'
 
 # renovate_setup CONFIG: renovate.json is CONFIG, and the presets of
 # flakeyard/renovate-config are required.
 renovate_setup() {
-  setup
+  action_setup
   apply ENABLED=true PRESETS='["flakeyard/renovate-config"]'
-  file_fixture renovate.json "$1"
+  file_fixture "$REPO" renovate.json "$SHA" "$1"
 }
 
 renovate_setup "$FLAKEYARD_CONFIG"
@@ -49,7 +49,7 @@ for config in '[]' 'not json' ''; do
   finish
 done
 
-setup
+action_setup
 apply ENABLED=true PRESETS='[]'
 run "renovate-config: renovate.json is missing" fail "$script"
 expect message "renovate.json is missing"
@@ -57,33 +57,33 @@ finish
 
 for other in renovate.json5 .renovaterc .github/renovate.json .gitlab/renovate.json5; do
   renovate_setup "$FLAKEYARD_CONFIG"
-  file_fixture "$other" '{}'
+  file_fixture "$REPO" "$other" "$SHA" '{}'
   run "renovate-config: $other is another configuration" fail "$script"
   expect message "remove $other: renovate.json must be the only Renovate configuration"
   finish
 done
 
 renovate_setup "$FLAKEYARD_CONFIG"
-file_fixture package.json '{"name":"x","renovate":{"extends":[]}}'
+file_fixture "$REPO" package.json "$SHA" '{"name":"x","renovate":{"extends":[]}}'
 run "renovate-config: package.json with a configuration" fail "$script"
 expect message "remove the key renovate of package.json"
 finish
 
 # Every other configuration and no renovate.json: as many errors as a step
 # writes, the last one included.
-setup
+action_setup
 apply ENABLED=true PRESETS='[]'
 for other in renovate.json5 .renovaterc .renovaterc.json .renovaterc.json5 \
   .github/renovate.json .github/renovate.json5 .gitlab/renovate.json .gitlab/renovate.json5; do
-  file_fixture "$other" '{}'
+  file_fixture "$REPO" "$other" "$SHA" '{}'
 done
-file_fixture package.json '{"renovate":{}}'
+file_fixture "$REPO" package.json "$SHA" '{"renovate":{}}'
 run "renovate-config: the tenth error is written" fail "$script"
 expect message "renovate.json is missing"
 finish
 
 renovate_setup "$FLAKEYARD_CONFIG"
-file_fixture package.json '{"name":"x"}'
+file_fixture "$REPO" package.json "$SHA" '{"name":"x"}'
 run "renovate-config: package.json without a configuration" ok "$script"
 finish
 
@@ -107,7 +107,7 @@ for presets in '"flakeyard/renovate-config"' '["../x"]' '["flakeyard/.."]' '["fl
   finish
 done
 
-setup
+action_setup
 apply ENABLED=false PRESETS='[]'
 run "renovate-config: switched off" ok "$script"
 expect message "::notice::the renovate.json check is off"

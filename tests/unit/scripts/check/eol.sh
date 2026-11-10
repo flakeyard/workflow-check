@@ -5,7 +5,7 @@
 
 : "${root:?}"
 
-script=check/eol.sh
+script=scripts/check/eol.sh
 
 # eol_setup CONTENT: an EOL file with CONTENT, given to printf %b.
 eol_setup() {
@@ -17,7 +17,7 @@ eol_setup() {
 for case in "2026-10-29 ok supported" "2026-12-10 ok in 21 days" "2027-01-02 fail reached its end of life"; do
   read -r today expected message <<<"$case"
   eol_setup '# comment\nnixos-26.05 2026-12-31\n'
-  run_script "eol: $today" "$expected" "$script" "$eol_file" "$today"
+  run "eol: $today" "$expected" "$script" -- "$eol_file" "$today"
   expect message "$message"
   finish
 done
@@ -25,7 +25,7 @@ done
 # A malformed EOL file fails with a message instead of counting from today.
 while IFS='|' read -r name content message; do
   eol_setup "$content"
-  run_script "eol: $name" fail "$script" "$eol_file" 2026-10-29
+  run "eol: $name" fail "$script" -- "$eol_file" 2026-10-29
   expect message "$message"
   finish
 done <<'CASES'
@@ -40,17 +40,18 @@ an extra field|nixos-26.05 2026-12-31 x\n|unexpected 'x'
 CASES
 
 eol_setup 'nixos-26.05 2026-12-31'
-run_script "eol: a last line without a newline" ok "$script" "$eol_file" 2026-10-29
+run "eol: a last line without a newline" ok "$script" -- "$eol_file" 2026-10-29
 expect message "supported until 2026-12-31"
 finish
 
 eol_setup 'nixos-26.05 2026-12-31\n'
-run_script "eol: an invalid today" fail "$script" "$eol_file" ""
+run "eol: an invalid today" fail "$script" -- "$eol_file" ""
 expect message "'' is not a date"
 finish
 
 setup
-run_script "eol: a missing file" fail "$script" "$work/none"
+fixed_time 2026-10-29T00:00:00Z
+run "eol: a missing file" fail "$script" -- "$work/none"
 finish
 
 # The EOL file of this repository names the branch of nixpkgs in flake.lock.

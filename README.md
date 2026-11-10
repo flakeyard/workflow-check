@@ -253,14 +253,16 @@ lists of them. Helpers that only this repository uses are in `lib`:
 `lib/flake.sh` holds the form of the input `flake` and `lib/renovate.sh` reads
 presets of a Renovate configuration.
 
-`tests/run.sh` tests the scripts with the stubs of `gh` and `nix` in
+`tests/run.sh` tests the scripts with the harness and the stubs of `gh`, `date`
+and `sleep` in `internal/testing/` of the library, and the stub of `nix` in
 `tests/bin`; the suites in `tests/unit` mirror the actions and the helpers and
-share the helpers in `tests/lib`. `tests/unit/workflows/check.sh` checks the
-jobs of the workflow: their permissions, references, conditions and which of
-them may be skipped; `tests/unit/workflows/check-self.sh` checks that the
-repository's own CI calls the workflow as every caller must. They read the
-workflows with mikefarah `yq` v4, which GitHub-hosted runners have, and fail
-without it. The scripts need the library at the commit that `check.yaml` pins:
+share the helpers of this repository in `tests/lib`.
+`tests/unit/workflows/check.sh` checks the jobs of the workflow: their
+permissions, references, conditions, which of them may be skipped and how they
+pass the library to the actions; `tests/unit/workflows/check-self.sh` checks
+that the repository's own CI calls the workflow as every caller must. They read
+the workflows with mikefarah `yq` v4, which GitHub-hosted runners have, and fail
+without it. The tests need the library at the commit that `check.yaml` pins:
 `checks.unit` of the flake fetches it, and a direct run takes it from
 `SHELL_LIB`, such as
 `SHELL_LIB=<checkout> nix shell nixpkgs#yq-go -c tests/run.sh`.

@@ -1,15 +1,15 @@
 # shellcheck shell=bash
 # Tests of release-tags.
 
-script=release-tags/run.sh
+script=.github/actions/release-tags/run.sh
 readonly PRESET_RELEASE="repos/flakeyard/renovate-config/releases/tags/v0.1.0"
 
 # tags_setup CONFIG: renovate.json is CONFIG, no Copier answers, and v0.1.0
 # of flakeyard/renovate-config is an immutable pre-release.
 tags_setup() {
-  setup
+  action_setup
   apply ENABLED=true ALLOW_UNPINNED='[]'
-  file_fixture renovate.json "$1"
+  file_fixture "$REPO" renovate.json "$SHA" "$1"
   fixture "repos/$REPO/contents?ref=$SHA" '[{"type":"file","name":"renovate.json"}]'
   fixture "$PRESET_RELEASE" '{"tag_name":"v0.1.0","immutable":true,"prerelease":true}'
 }
@@ -19,7 +19,7 @@ answers_setup() {
   local file=$1 answers=$2
   fixture "repos/$REPO/contents?ref=$SHA" \
     "$(jq -n --arg file "$file" '[{type: "file", name: $file}, {type: "dir", name: ".copier-answers.d.yml"}]')"
-  file_fixture "$file" "$answers"
+  file_fixture "$REPO" "$file" "$SHA" "$answers"
 }
 
 tags_setup '{"extends":["github>flakeyard/renovate-config//internal/workflow#v0.1.0",":semanticCommits","config:recommended"]}'
@@ -76,7 +76,7 @@ done
 
 if has_wide_ranges; then
   tags_setup '{"extends":["github>öwner/répo#v1.0.0"]}'
-  apply LC_ALL="$WIDE_LOCALE"
+  apply_wide_locale
   run "release-tags: rejects a repository beyond ASCII in $WIDE_LOCALE" fail "$script"
   expect message "not a GitHub repository: öwner/répo"
   finish
@@ -100,7 +100,7 @@ finish
 
 tags_setup '{"extends":["github>x/y#v1.0.0\n::warning::forged"]}'
 run "release-tags: rejects multi-line presets" fail "$script"
-expect no-command warning
+expect warnings 0
 finish
 
 tags_setup '{"extends":["github>flakeyard/renovate-config#v0.1.0"]}'
@@ -109,7 +109,7 @@ run "release-tags: an API error fails" fail "$script"
 expect message "cannot read the release v0.1.0 of flakeyard/renovate-config"
 finish
 
-setup
+action_setup
 apply ENABLED=true ALLOW_UNPINNED='[]'
 fixture "repos/$REPO/contents?ref=$SHA" '[]'
 run "release-tags: nothing to check" ok "$script"
@@ -145,7 +145,7 @@ run "release-tags: a template without a release" fail "$script"
 expect message "flakeyard/template-x has no release v1.2.0"
 finish
 
-setup
+action_setup
 apply ENABLED=false ALLOW_UNPINNED='[]'
 run "release-tags: switched off" ok "$script"
 expect message "::notice::the release tag check is off"

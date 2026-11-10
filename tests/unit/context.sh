@@ -1,12 +1,12 @@
 # shellcheck shell=bash
 # Tests of context.
 
-script=context/run.sh
+script=.github/actions/context/run.sh
 
 # context_case NAME JOB_NAME CONTEXT: the job named JOB_NAME gets CONTEXT.
 context_case() {
   local name=$1 job_name=$2 context=$3
-  setup
+  action_setup
   apply CHECK_RUN_ID=125414394526
   fixture "repos/$REPO/actions/jobs/125414394526" "$(jq -n --arg name "$job_name" '{name: $name}')"
   run "context: $name" ok "$script"
@@ -20,26 +20,26 @@ context_case "from a nested call" "ci / check / required" "ci / check / required
 context_case "from another caller job id" "verify / required" "verify / required"
 context_case "from a job that is not called" "pending" "required"
 
-setup
+action_setup
 apply CHECK_RUN_ID=125414394526
 run "context: a missing job fails" fail "$script"
 expect message "cannot read the name of job 125414394526"
 finish
 
-setup
+action_setup
 apply CHECK_RUN_ID=125414394526
 fixture "repos/$REPO/actions/jobs/125414394526" '{"id":125414394526}'
 run "context: a job without a name fails" fail "$script"
 finish
 
-setup
+action_setup
 apply CHECK_RUN_ID=125414394526
 fixture "repos/$REPO/actions/jobs/125414394526" "HTTP 500"
 run "context: an API error fails" fail "$script"
 finish
 
 for id in "" "12/../34" "0"; do
-  setup
+  action_setup
   apply CHECK_RUN_ID="$id"
   run "context: rejects the check run id '$id'" fail "$script"
   expect message "not a check run id"

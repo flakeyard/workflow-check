@@ -68,8 +68,6 @@ if require_yq check.yaml; then
   check_test "every job that runs actions of this repository calls the library once" \
     'library_jobs | length == 4 and all(calls_library_once)'
   check_test "every action of this repository gets the library of its job" 'actions_get_library'
-  check_test "every use of the library names one commit" \
-    '[steps[] | select(library) | .uses] | unique | length == 1'
   check_test "the library runs whenever a later step of its job runs" \
     'library_jobs | all(library_runs_with_later_steps)'
   check_test "every check of meta is switched by a boolean input, true by default" \
@@ -102,10 +100,11 @@ if require_yq check.yaml; then
     '[.jobs.flake.steps[] | select(.uses == "$/.github/actions/flake-checks") | condition]
     == ["${{ !cancelled() }}"]'
 
+  check_library_pins
   # The actions get the library from the job; they do not call it (ADR-0003).
   for action in "$root"/.github/actions/*/action.yml; do
-    name=${action#"$root/.github/actions/"}
-    workflow_check "$(yq -o=json . "$action")" "${name%/action.yml}: gets the library as SHELL_LIB" \
+    name=${action#"$root/"}
+    workflow_check "$(load_yaml "$name")" "${name%/action.yml}: gets the library as SHELL_LIB" \
       '(.inputs["shell-lib"].required == true)
       and (.runs.steps | all(library | not) and all(.env.SHELL_LIB == "${{ inputs.shell-lib }}"))'
   done

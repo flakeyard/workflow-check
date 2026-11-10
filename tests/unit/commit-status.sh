@@ -1,11 +1,11 @@
 # shellcheck shell=bash
 # Tests of commit-status.
 
-script=commit-status/run.sh
+script=.github/actions/commit-status/run.sh
 
 # status_setup STATE: a status of STATE for the context check / required.
 status_setup() {
-  setup
+  action_setup
   apply STATE="$1" CONTEXT="check / required" RUN_URL=https://github.com/o/r/actions/runs/1
 }
 

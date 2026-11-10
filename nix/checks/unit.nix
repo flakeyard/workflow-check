@@ -1,7 +1,8 @@
 # tests/run.sh passes: the unit tests of the actions with the stubs of
-# tests/bin, and the static tests of the workflows. The tests run the actions
-# also in a locale whose ranges match letters beyond ASCII, with the shell
-# library at the commit that check.yaml pins, so that the pin exists once.
+# tests/bin and of the shell library, and the static tests of the workflows.
+# The tests run the actions also in a locale whose ranges match letters beyond
+# ASCII, with the shell library and its harness at the commit that check.yaml
+# pins, so that the pin exists once.
 {
   perSystem =
     { pkgs, sources, ... }:
@@ -37,9 +38,10 @@
           ''
             # The sandbox has no /usr/bin/env.
             cp -r ${sources}/. source
-            chmod -R u+w source
-            patchShebangs source
-            SHELL_LIB=${shellLib} bash source/tests/run.sh
+            cp -r ${shellLib} shell-lib
+            chmod -R u+w source shell-lib
+            patchShebangs source shell-lib
+            SHELL_LIB=$PWD/shell-lib bash source/tests/run.sh
             touch $out
           '';
     };
