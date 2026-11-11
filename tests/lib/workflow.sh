@@ -1,7 +1,7 @@
 # shellcheck shell=bash
-# Static tests of a workflow: jq expressions over the workflow, with the
-# helpers below, through yaml_check of internal/testing of the shell library.
-# Source this file after yaml.sh.
+# Static tests of the workflows and actions of this repository: jq expressions
+# with the helpers below, through workflow_check of internal/testing of the
+# shell library. Source this file after workflow.sh.
 # shellcheck disable=SC2016 # jq expressions, not expansions.
 # shellcheck disable=SC2034 # The suites read CHECK_PERMISSIONS.
 
@@ -13,13 +13,13 @@ readonly OWN_OR_PINNED='^(\$/\.github/actions/[a-z-]+|[A-Za-z0-9-]+/[A-Za-z0-9._
 # more.
 readonly CHECK_PERMISSIONS='{"actions":"read","contents":"read","pull-requests":"read","statuses":"write"}'
 
-# Helpers of the expressions of workflow_check. A job that runs an action of
-# this repository calls the library once, as its first step after the
-# checkout if it has one, with the id lib, and passes its path to every such
-# action (ADR-0003). Its condition is at least as permissive as that of any
-# later step: always() over !cancelled() over none.
-readonly WORKFLOW_DEFS='
-  def condition: (.if // "") | gsub("\\s+"; " ");
+# Helpers of the expressions of repository_check, which also have condition of
+# WORKFLOW_DEFS of the library. A job that runs an action of this repository
+# calls the library once, as its first step after the checkout if it has one,
+# with the id lib, and passes its path to every such action (ADR-0003). Its
+# condition is at least as permissive as that of any later step: always() over
+# !cancelled() over none.
+readonly REPOSITORY_DEFS='
   def steps: [.jobs[] | .steps // [] | .[]];
   def uses_of($job): [.jobs[$job].steps // [] | .[] | .uses // empty];
   def own_action: (.uses // "") | startswith("$/.github/actions/");
@@ -41,15 +41,10 @@ readonly WORKFLOW_DEFS='
     [steps[] | select(own_action) | .with["shell-lib"]] | all(. == "${{ steps.lib.outputs.path }}");
 '
 
-# load_workflow FILE: print the workflow FILE of .github/workflows as JSON.
-load_workflow() {
-  local file=$1
-  load_yaml ".github/workflows/$file"
-}
-
-# workflow_check WORKFLOW NAME FILTER: FILTER, a jq expression over WORKFLOW,
-# the JSON of load_workflow, with the helpers of WORKFLOW_DEFS, is true.
-workflow_check() {
-  local workflow=$1 name=$2 filter=$3
-  yaml_check "$workflow" "$name" "$WORKFLOW_DEFS $filter" --arg own_or_pinned "$OWN_OR_PINNED"
+# repository_check JSON NAME FILTER: test NAME: FILTER, a jq expression over
+# JSON, a workflow or an action.yml, with the helpers of REPOSITORY_DEFS and
+# $own_or_pinned, is true.
+repository_check() {
+  local json=$1 name=$2 filter=$3
+  workflow_check "$json" "$name" "$REPOSITORY_DEFS $filter" --arg own_or_pinned "$OWN_OR_PINNED"
 }

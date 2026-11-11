@@ -5,7 +5,7 @@
 : "${root:?}"
 
 # scorecard_test NAME FILTER: FILTER is true of scorecard.yaml.
-scorecard_test() { workflow_check "$scorecard_workflow" "scorecard.yaml: $1" "$2"; }
+scorecard_test() { repository_check "$scorecard_workflow" "scorecard.yaml: $1" "$2"; }
 
 if require_yq scorecard.yaml; then
   scorecard_workflow=$(load_workflow scorecard.yaml)

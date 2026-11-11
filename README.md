@@ -256,7 +256,8 @@ presets of a Renovate configuration.
 `tests/run.sh` tests the scripts with the harness and the stubs of `gh`, `date`
 and `sleep` in `internal/testing/` of the library, and the stub of `nix` in
 `tests/bin`; the suites in `tests/unit` mirror the actions and the helpers and
-share the helpers of this repository in `tests/lib`.
+share the helpers of this repository in `tests/lib`. The static tests of the
+workflows and actions run on `workflow.sh` of `internal/testing/`.
 `tests/unit/workflows/check.sh` checks the jobs of the workflow: their
 permissions, references, conditions, which of them may be skipped and how they
 pass the library to the actions; `tests/unit/workflows/check-self.sh` checks

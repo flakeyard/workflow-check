@@ -6,7 +6,7 @@
 : "${root:?}"
 
 # maintenance_test NAME FILTER: FILTER is true of maintenance.yaml.
-maintenance_test() { workflow_check "$maintenance_workflow" "maintenance.yaml: $1" "$2"; }
+maintenance_test() { repository_check "$maintenance_workflow" "maintenance.yaml: $1" "$2"; }
 
 if require_yq maintenance.yaml; then
   maintenance_workflow=$(load_workflow maintenance.yaml)

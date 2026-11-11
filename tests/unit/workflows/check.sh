@@ -18,7 +18,7 @@ readonly NIXPKGS_EOL_INPUT='${{ inputs.nixpkgs-eol }}'
 readonly DISPATCHED="github.event_name == 'workflow_dispatch'"
 
 # check_test NAME FILTER: FILTER is true of check.yaml.
-check_test() { workflow_check "$check_workflow" "check.yaml: $1" "$2"; }
+check_test() { repository_check "$check_workflow" "check.yaml: $1" "$2"; }
 
 if require_yq check.yaml; then
   check_workflow=$(load_workflow check.yaml)
@@ -104,7 +104,7 @@ if require_yq check.yaml; then
   # The actions get the library from the job; they do not call it (ADR-0003).
   for action in "$root"/.github/actions/*/action.yml; do
     name=${action#"$root/"}
-    workflow_check "$(load_yaml "$name")" "${name%/action.yml}: gets the library as SHELL_LIB" \
+    repository_check "$(load_yaml "$name")" "${name%/action.yml}: gets the library as SHELL_LIB" \
       '(.inputs["shell-lib"].required == true)
       and (.runs.steps | all(library | not) and all(.env.SHELL_LIB == "${{ inputs.shell-lib }}"))'
   done
