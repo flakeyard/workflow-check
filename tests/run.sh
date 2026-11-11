@@ -2,9 +2,8 @@
 # Unit tests of the scripts in .github/actions, with the harness and the stubs
 # of gh, date and sleep of internal/testing of the shell library and the stub
 # of nix in tests/bin. The suites in tests/unit mirror the actions: one file
-# per action, and one per helper under tests/unit/lib; tests/unit/scripts has
-# one file per script of scripts/; tests/unit/workflows has one file per
-# workflow and needs yq. The scripts and the harness come from SHELL_LIB,
+# per action, and one per helper under tests/unit/lib; tests/unit/workflows
+# has one file per workflow and needs yq. The scripts and the harness come from SHELL_LIB,
 # which must be action-shell-lib at the commit pinned in
 # .github/workflows/check.yaml; checks.unit of the flake sets it.
 # Usage: SHELL_LIB=DIR tests/run.sh
