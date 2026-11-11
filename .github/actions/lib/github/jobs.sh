@@ -32,15 +32,14 @@ caller_prefix() {
 
 # attempt_jobs RUN_ID ATTEMPT: print the jobs of one attempt of a run, every
 # job of the run with the result it has in that attempt, as a JSON array of
-# {name, status, conclusion}.
+# {name, status, conclusion}. Transient errors of the API are retried.
 attempt_jobs() {
   local run_id=$1 attempt=$2 jobs
   [[ $run_id =~ $ID_FORM && $attempt =~ $ID_FORM ]] || {
     echo "not a run id and attempt: $run_id, $attempt" >&2
     return 1
   }
-  jobs=$(gh api --paginate \
-    "repos/$REPO/actions/runs/$run_id/attempts/$attempt/jobs?per_page=100" \
-    --jq '.jobs[] | {name, status, conclusion}') || return 1
+  jobs=$(api_request GET "repos/$REPO/actions/runs/$run_id/attempts/$attempt/jobs?per_page=100" \
+    --paginate --jq '.jobs[] | {name, status, conclusion}') || return 1
   jq -s . <<<"$jobs"
 }

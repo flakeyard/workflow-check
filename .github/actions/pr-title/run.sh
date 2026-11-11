@@ -49,12 +49,13 @@ check_pull_request() {
   check_title "$number" "$(jq -r .title <<<"$pull")"
 }
 
-# check_branch: check the titles of the open pull requests of BRANCH.
+# check_branch: check the titles of the open pull requests of BRANCH;
+# transient errors of the API are retried.
 check_branch() {
   local head pulls pull
   head=$(jq -rn --arg head "$OWNER:$BRANCH" '$head | @uri')
-  pulls=$(gh api --paginate "repos/$REPO/pulls?state=open&head=$head&per_page=100" \
-    --jq '.[] | {number, title} | @json') || fail "cannot list the pull requests of $BRANCH"
+  pulls=$(api_request GET "repos/$REPO/pulls?state=open&head=$head&per_page=100" \
+    --paginate --jq '.[] | {number, title} | @json') || fail "cannot list the pull requests of $BRANCH"
   if [[ -z $pulls ]]; then
     notice "no open pull request of $BRANCH; no title to check"
     return 0

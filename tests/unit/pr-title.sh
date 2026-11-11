@@ -112,6 +112,20 @@ expect message "pull request #8: the title"
 expect no-message "pull request #7: the title"
 finish
 
+# The delay restates _API_RETRY_DELAY of the library as an independent oracle.
+dispatch_setup '[{"number":7,"title":"chore(main): release 0.2.0"}]'
+transient_failures "$branch_pulls" 1
+run "pr-title: a transient error of the pull requests of the branch is retried" ok "$script"
+expect sleeps 5
+expect summary "pull request #7"
+finish
+
+dispatch_setup '[]'
+transient_failures "$branch_pulls" 3
+run "pr-title: an error of the pull requests of the branch that lasts fails" fail "$script"
+expect message "cannot list the pull requests of release-please--branches--main"
+finish
+
 dispatch_setup '[]'
 run "pr-title: a dispatched branch without pull requests" ok "$script"
 expect message "::notice::no open pull request of release-please--branches--main"
