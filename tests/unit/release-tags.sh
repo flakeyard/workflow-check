@@ -10,15 +10,14 @@ tags_setup() {
   action_setup
   apply ENABLED=true ALLOW_UNPINNED='[]'
   file_fixture "$REPO" renovate.json "$SHA" "$1"
-  fixture "repos/$REPO/contents?ref=$SHA" '[{"type":"file","name":"renovate.json"}]'
+  listing_fixture "" renovate.json
   fixture "$PRESET_RELEASE" '{"tag_name":"v0.1.0","immutable":true,"prerelease":true}'
 }
 
 # answers_setup FILE ANSWERS: the Copier answers FILE at the root.
 answers_setup() {
   local file=$1 answers=$2
-  fixture "repos/$REPO/contents?ref=$SHA" \
-    "$(jq -n --arg file "$file" '[{type: "file", name: $file}, {type: "dir", name: ".copier-answers.d.yml"}]')"
+  listing_fixture "" "$file" .copier-answers.d.yml/
   file_fixture "$REPO" "$file" "$SHA" "$answers"
 }
 
@@ -111,7 +110,7 @@ finish
 
 action_setup
 apply ENABLED=true ALLOW_UNPINNED='[]'
-fixture "repos/$REPO/contents?ref=$SHA" '[]'
+listing_fixture ""
 run "release-tags: nothing to check" ok "$script"
 finish
 

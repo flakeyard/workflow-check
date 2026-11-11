@@ -250,6 +250,7 @@ missing resource from an error, `github/contents.sh` reads repository files at
 the checked commit and `github/forms.sh` holds the form of repository names and
 lists of them. Helpers that only this repository uses are in `lib`:
 `lib/github/jobs.sh` reads the name of a job and the jobs of a run attempt,
+`lib/github/directory.sh` lists a directory at the checked commit,
 `lib/flake.sh` holds the form of the input `flake` and `lib/renovate.sh` reads
 presets of a Renovate configuration.
 

@@ -4,12 +4,25 @@
 script=.github/actions/renovate-config/run.sh
 readonly FLAKEYARD_CONFIG='{"extends":["github>flakeyard/renovate-config//internal/workflow#v0.1.0"]}'
 
-# renovate_setup CONFIG: renovate.json is CONFIG, and the presets of
-# flakeyard/renovate-config are required.
+# renovate_setup CONFIG: renovate.json is CONFIG and the only file at the
+# root, and the presets of flakeyard/renovate-config are required.
 renovate_setup() {
   action_setup
   apply ENABLED=true PRESETS='["flakeyard/renovate-config"]'
   file_fixture "$REPO" renovate.json "$SHA" "$1"
+  listing_fixture "" renovate.json
+}
+
+# other_setup PATH: renovate.json and PATH, at the root or in a directory of
+# it, are the only files.
+other_setup() {
+  local path=$1
+  if [[ $path == */* ]]; then
+    listing_fixture "" renovate.json "${path%%/*}/"
+    listing_fixture "${path%%/*}" "${path#*/}"
+  else
+    listing_fixture "" renovate.json "$path"
+  fi
 }
 
 renovate_setup "$FLAKEYARD_CONFIG"
@@ -51,19 +64,21 @@ done
 
 action_setup
 apply ENABLED=true PRESETS='[]'
+listing_fixture ""
 run "renovate-config: renovate.json is missing" fail "$script"
 expect message "renovate.json is missing"
 finish
 
 for other in renovate.json5 .renovaterc .github/renovate.json .gitlab/renovate.json5; do
   renovate_setup "$FLAKEYARD_CONFIG"
-  file_fixture "$REPO" "$other" "$SHA" '{}'
+  other_setup "$other"
   run "renovate-config: $other is another configuration" fail "$script"
   expect message "remove $other: renovate.json must be the only Renovate configuration"
   finish
 done
 
 renovate_setup "$FLAKEYARD_CONFIG"
+other_setup package.json
 file_fixture "$REPO" package.json "$SHA" '{"name":"x","renovate":{"extends":[]}}'
 run "renovate-config: package.json with a configuration" fail "$script"
 expect message "remove the key renovate of package.json"
@@ -73,24 +88,51 @@ finish
 # writes, the last one included.
 action_setup
 apply ENABLED=true PRESETS='[]'
-for other in renovate.json5 .renovaterc .renovaterc.json .renovaterc.json5 \
-  .github/renovate.json .github/renovate.json5 .gitlab/renovate.json .gitlab/renovate.json5; do
-  file_fixture "$REPO" "$other" "$SHA" '{}'
-done
+listing_fixture "" renovate.json5 .renovaterc .renovaterc.json .renovaterc.json5 \
+  .github/ .gitlab/ package.json
+listing_fixture .github renovate.json renovate.json5
+listing_fixture .gitlab renovate.json renovate.json5
 file_fixture "$REPO" package.json "$SHA" '{"renovate":{}}'
 run "renovate-config: the tenth error is written" fail "$script"
 expect message "renovate.json is missing"
 finish
 
 renovate_setup "$FLAKEYARD_CONFIG"
+other_setup package.json
 file_fixture "$REPO" package.json "$SHA" '{"name":"x"}'
 run "renovate-config: package.json without a configuration" ok "$script"
 finish
 
+# The requests are an independent oracle: one listing of the root, one of
+# each directory of other configurations that exists, and renovate.json.
 renovate_setup "$FLAKEYARD_CONFIG"
-fixture "repos/$REPO/contents/.renovaterc?ref=$SHA" "HTTP 500"
+apply LOG_GETS=1
+run "renovate-config: one listing of the root" ok "$script"
+expect_calls 2
+expect call "GET repos/$REPO/contents?ref=$SHA"
+finish
+
+renovate_setup "$FLAKEYARD_CONFIG"
+listing_fixture "" renovate.json .github/ src/
+listing_fixture .github workflows/
+apply LOG_GETS=1
+run "renovate-config: a listing of .github, only because it exists" ok "$script"
+expect_calls 3
+expect call "GET repos/$REPO/contents/.github?ref=$SHA"
+expect no-call "/.gitlab?"
+finish
+
+renovate_setup "$FLAKEYARD_CONFIG"
+fixture "repos/$REPO/contents?ref=$SHA" "HTTP 500"
 run "renovate-config: an API error fails" fail "$script"
-expect message "cannot read .renovaterc at $SHA"
+expect message "cannot list the root at $SHA"
+finish
+
+renovate_setup "$FLAKEYARD_CONFIG"
+listing_fixture "" renovate.json .gitlab/
+fixture "repos/$REPO/contents/.gitlab?ref=$SHA" "HTTP 500"
+run "renovate-config: an API error of a directory fails" fail "$script"
+expect message "cannot list .gitlab at $SHA"
 finish
 
 renovate_setup "$FLAKEYARD_CONFIG"
