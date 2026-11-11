@@ -6,14 +6,7 @@ date: 2026-11-07
 supersedes: []
 superseded_by: []
 related: [ADR-0001, ADR-0002]
-affects:
-  [
-    ".github/workflows/check.yaml",
-    ".github/workflows/maintenance.yaml",
-    ".github/actions/**",
-    "tests/**",
-    "nixpkgs-eol",
-  ]
+affects: [".github/workflows/check.yaml", ".github/actions/**", "tests/**"]
 review_by:
 ---
 
