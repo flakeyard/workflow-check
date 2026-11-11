@@ -50,3 +50,23 @@ expect_lines() {
   lines=$(multiline_output "$name")
   [[ $lines == "$expected" ]] || report "output $name is '$lines', expected '$expected'"
 }
+
+# listing_fixture DIR ENTRY...: answer the listing of the directory DIR of
+# REPO at SHA, "" for the root, with ENTRY..., each a file, or a directory
+# when it ends with "/".
+listing_fixture() {
+  local dir=$1
+  shift
+  fixture "repos/$REPO/contents${dir:+/$dir}?ref=$SHA" "$(jq -nc '$ARGS.positional
+    | map(if endswith("/") then {name: rtrimstr("/"), type: "dir"} else {name: ., type: "file"} end)' \
+    --args -- "$@")"
+}
+
+# expect_calls COUNT: the last run made COUNT requests of the gh stub; GETs
+# count only when LOG_GETS is applied.
+expect_calls() {
+  local expected=$1 count
+  [[ -n $current ]] || return 0
+  count=$(wc -l <"$work/calls")
+  [[ $count == "$expected" ]] || report "$count calls, expected $expected: $(paste -sd';' "$work/calls")"
+}

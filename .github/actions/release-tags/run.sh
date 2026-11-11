@@ -18,6 +18,8 @@ source "$SHELL_LIB/github/api.sh"
 source "$SHELL_LIB/github/contents.sh"
 # shellcheck source=/dev/null
 source "$SHELL_LIB/github/forms.sh"
+# shellcheck source=../lib/github/directory.sh
+source "$lib/github/directory.sh"
 # shellcheck source=../lib/renovate.sh
 source "$lib/renovate.sh"
 # shellcheck source=/dev/null
@@ -127,7 +129,7 @@ check_template() {
 # line.
 root_files() {
   local listing
-  listing=$(api_get "repos/$REPO/contents?ref=$SHA") || return 1
+  listing=$(directory_at "$ROOT_DIR" "$SHA") || return 1
   jq -r '.[] | select(.type == "file") | .name' <<<"$listing"
 }
 

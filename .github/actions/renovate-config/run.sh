@@ -2,7 +2,8 @@
 # Fails unless, at commit SHA, renovate.json is the only Renovate
 # configuration, is a JSON object and its extends lists a preset of a
 # repository in PRESETS, or any preset when PRESETS is empty. Every file is
-# read through the contents API. ENABLED=false switches the check off.
+# read through the contents API, and the other configurations are found in
+# listings of their directories. ENABLED=false switches the check off.
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
 shopt -s inherit_errexit
@@ -14,6 +15,8 @@ lib=$(dirname "$0")/../lib
 source "$SHELL_LIB/github/contents.sh"
 # shellcheck source=/dev/null
 source "$SHELL_LIB/github/forms.sh"
+# shellcheck source=../lib/github/directory.sh
+source "$lib/github/directory.sh"
 # shellcheck source=../lib/renovate.sh
 source "$lib/renovate.sh"
 # shellcheck source=/dev/null
@@ -27,13 +30,39 @@ readonly OTHER_CONFIGS=(
   .gitlab/renovate.json .gitlab/renovate.json5
 )
 readonly PACKAGE_JSON=package.json
+# The directories below the root that hold other configurations.
+readonly CONFIG_DIRS=(.github .gitlab)
+# The jq filter that prints the paths of the entries of a listing of the
+# directory $dir, ROOT_DIR for the root, with their types, one per line.
+# shellcheck disable=SC2016 # jq, not shell.
+readonly ENTRY_PATHS='.[] | "\(.type) \(if $dir == "" then "" else "\($dir)/" end)\(.name)"'
 
-# exists PATH: PATH exists at SHA; exits on an error of the API.
+# The type of every path that a listing found, by path.
+declare -A types=()
+
+# list_dir DIR: add the entries of the directory DIR, ROOT_DIR for the root,
+# to types; exits on an error of the API.
+list_dir() {
+  local dir=$1 listing type path
+  listing=$(directory_at "$dir" "$SHA") || fail "cannot list ${dir:-the root} at $SHA"
+  while read -r type path; do
+    types[$path]=$type
+  done < <(jq -r --arg dir "$dir" "$ENTRY_PATHS" <<<"$listing")
+}
+
+# list_config_dirs: add the entries of the root, and of each directory of
+# CONFIG_DIRS that it has, to types.
+list_config_dirs() {
+  local dir
+  list_dir "$ROOT_DIR"
+  for dir in "${CONFIG_DIRS[@]}"; do
+    if [[ ${types[$dir]-} == dir ]]; then list_dir "$dir"; fi
+  done
+}
+
+# exists PATH: a listing found PATH.
 exists() {
-  local path=$1 status=0
-  file_at "$path" "$SHA" >/dev/null 2>&1 || status=$?
-  ((status != NOT_FOUND)) || return 1
-  ((status == 0)) || fail "cannot read $path at $SHA"
+  [[ -v types[$1] ]]
 }
 
 check_presets_input() {
@@ -42,6 +71,7 @@ check_presets_input() {
 
 check_other_configs() {
   local path
+  list_config_dirs
   for path in "${OTHER_CONFIGS[@]}"; do
     if exists "$path"; then problem "remove $path: $CONFIG must be the only Renovate configuration"; fi
   done
