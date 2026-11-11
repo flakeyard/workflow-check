@@ -8,7 +8,7 @@
 readonly CALLER_CONDITION="\${{ !cancelled() || github.event_name == 'workflow_dispatch' }}"
 
 # self_test NAME FILTER: FILTER is true of check-self.yaml.
-self_test() { workflow_check "$self_workflow" "check-self.yaml: $1" "$2"; }
+self_test() { repository_check "$self_workflow" "check-self.yaml: $1" "$2"; }
 
 if require_yq check-self.yaml; then
   self_workflow=$(load_workflow check-self.yaml)

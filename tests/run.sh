@@ -30,6 +30,8 @@ source "$testing/fixtures.sh"
 # shellcheck source=/dev/null
 source "$testing/yaml.sh"
 # shellcheck source=/dev/null
+source "$testing/workflow.sh"
+# shellcheck source=/dev/null
 source "$testing/consumer/action.sh"
 # shellcheck source=lib/action.sh
 source "$root/tests/lib/action.sh"
