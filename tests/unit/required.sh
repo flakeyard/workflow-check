@@ -179,6 +179,13 @@ run "required: check-may-skip names only the needs of required" fail "$script"
 expect message "check-may-skip names jobs that are not in the needs of the job required"
 finish
 
+# The delay restates _API_RETRY_DELAY of the library as an independent oracle.
+required_setup
+transient_failures "$attempt_path" 1
+run "required: a transient error of the jobs of the attempt is retried" ok "$script"
+expect sleeps 5
+finish
+
 required_setup
 fixture "$attempt_path" "HTTP 500"
 run "required: an API error fails" fail "$script"
