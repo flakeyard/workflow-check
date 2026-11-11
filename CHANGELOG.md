@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/flakeyard/workflow-check/compare/v0.3.1...v0.3.2) (2026-11-11)
+
+
+### Bug Fixes
+
+* **deps:** update flakeyard/action-setup-nix action to v0.1.4 ([#45](https://github.com/flakeyard/workflow-check/issues/45)) ([acb3a35](https://github.com/flakeyard/workflow-check/commit/acb3a350c8b6aa43799b203c195885665ea0398f))
+
 ## [0.3.1](https://github.com/flakeyard/workflow-check/compare/v0.3.0...v0.3.1) (2026-11-11)
 
 
