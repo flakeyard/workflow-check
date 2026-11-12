@@ -109,3 +109,6 @@ jobs:
       needs: ${{ toJSON(needs) }}
       expect-checks: '["formatting","shell","unit"]'
       renovate-presets: '["flakeyard/renovate-config"]'
+      # A flakeyard repository keeps no configuration files of atom tools
+      # (FY-0037).
+      forbid-tool-configs: true
