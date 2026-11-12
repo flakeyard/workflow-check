@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.4](https://github.com/flakeyard/workflow-check/compare/v0.3.3...v0.3.4) (2026-11-12)
+
+
+### Bug Fixes
+
+* **deps:** update flakeyard/action-flake-lock action to v0.2.2 ([#72](https://github.com/flakeyard/workflow-check/issues/72)) ([20e38b0](https://github.com/flakeyard/workflow-check/commit/20e38b079662f6bcccfa1fa0b06b4aba1a7921f2))
+* **deps:** update flakeyard/action-setup-nix action to v0.1.5 ([#73](https://github.com/flakeyard/workflow-check/issues/73)) ([69dd535](https://github.com/flakeyard/workflow-check/commit/69dd535ece3976e0def12e1194bcbeba1e9d6e04))
+* **deps:** update flakeyard/action-shell-lib action to v0.1.4 ([#70](https://github.com/flakeyard/workflow-check/issues/70)) ([4dc36bc](https://github.com/flakeyard/workflow-check/commit/4dc36bcd46ebd5ab5cb646d5f8f32671a41661e5))
+* retry transient errors of paginated reads of the API ([#67](https://github.com/flakeyard/workflow-check/issues/67)) ([1ec5b49](https://github.com/flakeyard/workflow-check/commit/1ec5b49a9d90929c9ed540cf02b6f85366f25545))
+
+
+### Performance Improvements
+
+* list the directories of other Renovate configurations once ([#66](https://github.com/flakeyard/workflow-check/issues/66)) ([b0cae30](https://github.com/flakeyard/workflow-check/commit/b0cae301861cb8d469a9bc7c3321831c676c4cf1))
+
 ## [0.3.3](https://github.com/flakeyard/workflow-check/compare/v0.3.2...v0.3.3) (2026-11-11)
 
 
