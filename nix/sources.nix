@@ -1,13 +1,13 @@
 # The actions and tests of the repository as one source for the checks.
 {
   perSystem =
-    { pkgs, ... }:
+    { pkgs, root, ... }:
     {
       _module.args.sources = pkgs.lib.fileset.toSource {
-        root = ../.;
+        inherit root;
         fileset = pkgs.lib.fileset.unions [
-          ../.github
-          ../tests
+          (root + "/.github")
+          (root + "/tests")
         ];
       };
     };
