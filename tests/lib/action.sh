@@ -1,22 +1,45 @@
 # shellcheck shell=bash
 # The tests of the action scripts on top of internal/testing of the shell
-# library: the variables that every script reads, the locale of the runner and
-# outputs of several lines. Source this file after case.sh and checks.sh.
+# library: the copy of the library that the steps run, the variables that every
+# script reads, the locale of the runner and outputs of several lines. Source
+# this file after case.sh, checks.sh, yaml.sh, consumer/library.sh,
+# consumer/action.sh and consumer/step.sh; it expects root, the repository's
+# directory.
 # shellcheck disable=SC2154 # work and current come from case.sh.
+# shellcheck disable=SC2034 # ACTIONS is read by the suites.
 
-: "${SHELL_LIB:?}"
+: "${SHELL_LIB:?}" "${root:?}"
 
 # The repository and the commit that the scripts check.
 readonly REPO=o/r SHA=aaa
 # A locale in which ranges such as [a-z] match letters beyond ASCII, such as
 # é: the action scripts must not depend on the locale of the runner.
 readonly WIDE_LOCALE=en_US.UTF-8
+# The tools of the runner that the scripts run from SYSTEM_PATH.
+readonly RUNNER_TOOLS=(base64 bash cat env grep jq mktemp rm sed)
+# The directory of the internal actions, ACTIONS/<name>/action.yml.
+readonly ACTIONS=$root/.github/actions
+
+# Files shared by all tests, removed at the end.
+shared=$(mktemp -d)
+trap 'rm -rf -- "$shared"' EXIT
+sysbin=$shared/bin
+mkdir "$sysbin"
+for tool in "${RUNNER_TOOLS[@]}"; do
+  ln -s "$(command -v "$tool")" "$sysbin/$tool"
+done
+
+# The copy of the library that the steps run, whose SYSTEM_PATH is the stubs
+# of the library and the tools of the runner.
+shell_lib=$shared/shell-lib
+copy_library "$shell_lib" "$TESTING_BIN:$sysbin"
+readonly shell_lib
 
 # action_setup: setup for a run of an action script, which reads the library,
 # the repository and the commit.
 action_setup() {
   setup
-  apply SHELL_LIB="$SHELL_LIB" REPO="$REPO" SHA="$SHA"
+  apply SHELL_LIB="$shell_lib" REPO="$REPO" SHA="$SHA"
 }
 
 # has_wide_ranges: the system has WIDE_LOCALE, and [a-z] matches é in it.
