@@ -39,6 +39,15 @@ on:
         description: JSON array of check names that the flake must have.
         type: string
         default: "[]"
+      override-inputs:
+        description: >-
+          JSON object of the inputs of the root of the flake to override in
+          every Nix command of the flake jobs, and their flake references,
+          which start with git+https:// or github:. flake.lock stays as
+          committed. The caller chooses the runs, such as those of its
+          schedule.
+        type: string
+        default: "{}"
       extra-substituters:
         description: Binary caches to use besides cache.nixos.org.
         type: string
@@ -226,6 +235,7 @@ jobs:
           system: ${{ matrix.system }}
           systems: ${{ inputs.systems }}
           expect-checks: ${{ inputs.expect-checks }}
+          override-inputs: ${{ inputs.override-inputs }}
 
   required:
     needs: [pending, meta, flake]
