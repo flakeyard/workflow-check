@@ -205,7 +205,7 @@ jobs:
           shell-lib: ${{ steps.lib.outputs.path }}
           flake: ${{ inputs.flake }}
           allow-duplicates: ${{ inputs.allow-duplicates }}
-      - uses: flakeyard/action-setup-nix@0a6360ba8fee1bb4da86d28ec4a1d204aa047be3 # v0.1.4
+      - uses: flakeyard/action-setup-nix@6718901a8eee1c62fd9ebddb8c8a11082c4e6495 # v0.1.5
         with:
           extra-substituters: ${{ inputs.extra-substituters }}
           extra-trusted-public-keys: ${{ inputs.extra-trusted-public-keys }}
