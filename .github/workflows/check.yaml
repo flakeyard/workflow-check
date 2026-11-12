@@ -212,7 +212,7 @@ jobs:
       # Before the flake is evaluated. It reads releases with github.token,
       # which needs no permissions.
       - if: ${{ inputs.flake-lock }}
-        uses: flakeyard/action-flake-lock@c71e2fa9e35478ea672d589e61bfcad52b29dfff # v0.2.2
+        uses: flakeyard/action-flake-lock@dd397ebcf41c051143dd22eae6c64c6fad36b514 # v0.2.3
         with:
           path: ${{ steps.flake-lock-inputs.outputs.path }}
           allow-duplicates: ${{ steps.flake-lock-inputs.outputs.allow-duplicates }}
