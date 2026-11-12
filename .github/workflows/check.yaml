@@ -118,6 +118,13 @@ on:
           off; it then succeeds with a notice.
         type: boolean
         default: true
+      forbid-tool-configs:
+        description: >-
+          Fail when the repository has a configuration file of an atom tool at
+          its standard root path, such as .github/zizmor.yml. false, the
+          default, switches the check off; it then succeeds with a notice.
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -186,6 +193,11 @@ jobs:
           enabled: ${{ inputs.flake-lock }}
           flake: ${{ inputs.flake }}
           nixpkgs-eol: ${{ inputs.nixpkgs-eol }}
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/tool-configs
+        with:
+          shell-lib: ${{ steps.lib.outputs.path }}
+          enabled: ${{ inputs.forbid-tool-configs }}
 
   flake:
     # No name: GitHub names each job after its matrix values, and a job

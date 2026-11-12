@@ -8,8 +8,10 @@
 
 # The jobs of the workflow, sorted.
 readonly CHECK_JOBS='["flake","meta","pending","required"]'
-# The checks of meta that an input switches, in their order.
-readonly SWITCHED_CHECKS='["pr-title","renovate-config","release-tags","flake-lock"]'
+# The checks of meta that an input switches, in their order, and those of
+# them that are off by default (ADR-0005).
+readonly SWITCHED_CHECKS='["pr-title","renovate-config","release-tags","flake-lock","forbid-tool-configs"]'
+readonly OFF_BY_DEFAULT='["forbid-tool-configs"]'
 # The steps of flake, in their order: the check of flake.lock comes right
 # after Nix is installed and before the flake is evaluated.
 readonly FLAKE_STEPS='["actions/checkout@","flakeyard/action-shell-lib@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks"]'
@@ -70,10 +72,11 @@ if require_yq check.yaml; then
   check_test "every action of this repository gets the library of its job" 'actions_get_library'
   check_test "the library runs whenever a later step of its job runs" \
     'library_jobs | all(library_runs_with_later_steps)'
-  check_test "every check of meta is switched by a boolean input, true by default" \
-    "$SWITCHED_CHECKS"' as $names
+  check_test "every check of meta is switched by a boolean input, true by default unless listed" \
+    "$SWITCHED_CHECKS"' as $names | '"$OFF_BY_DEFAULT"' as $off
     | [.jobs.meta.steps[] | .with.enabled // empty] == [$names[] | "${{ inputs.\(.) }}"]
-    and ([.on.workflow_call.inputs[$names[]] | .type == "boolean" and .default == true] | all)'
+    and ([$names[] as $name | .on.workflow_call.inputs[$name]
+    | .type == "boolean" and .default == ($off | index($name) == null)] | all)'
   check_test "meta reports the check of flake.lock, which has no step there" \
     "[.jobs.meta.steps[] | select(.uses == \"\$/.github/actions/flake-lock-notice\") | .with
     | [.flake, .[\"nixpkgs-eol\"]]] == [[\"\${{ inputs.flake }}\", \"$NIXPKGS_EOL_INPUT\"]]"
