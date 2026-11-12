@@ -32,6 +32,10 @@ source "$testing/yaml.sh"
 source "$testing/workflow.sh"
 # shellcheck source=/dev/null
 source "$testing/consumer/action.sh"
+# shellcheck source=/dev/null
+source "$testing/consumer/library.sh"
+# shellcheck source=/dev/null
+source "$testing/consumer/step.sh"
 # shellcheck source=lib/action.sh
 source "$root/tests/lib/action.sh"
 # shellcheck source=lib/workflow.sh

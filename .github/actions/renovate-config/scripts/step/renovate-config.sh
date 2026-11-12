@@ -6,18 +6,20 @@
 # listings of their directories. ENABLED=false switches the check off.
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
-shopt -s inherit_errexit
-# Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
-export LC_ALL=C.UTF-8
 : "${SHELL_LIB:?}" "${REPO:?}" "${SHA:?}" "${ENABLED:?}" "${PRESETS?}"
-lib=$(dirname "$0")/../lib
+# The tools of the runner, LC_ALL=C and inherit_errexit.
+# shellcheck source=/dev/null
+source "$SHELL_LIB/env.sh"
+step_environment
+# From $0, which no variable of the job can set (ADR-0004).
+lib=${0%/*}/../../../lib
 # shellcheck source=/dev/null
 source "$SHELL_LIB/github/contents.sh"
 # shellcheck source=/dev/null
 source "$SHELL_LIB/github/forms.sh"
-# shellcheck source=../lib/github/directory.sh
+# shellcheck source=../../../lib/github/directory.sh
 source "$lib/github/directory.sh"
-# shellcheck source=../lib/renovate.sh
+# shellcheck source=../../../lib/renovate.sh
 source "$lib/renovate.sh"
 # shellcheck source=/dev/null
 source "$SHELL_LIB/report.sh"

@@ -6,8 +6,11 @@
 # off its check of the end of life. The check itself is a step of the flake
 # jobs, which have no notice of their own.
 set -euo pipefail
-shopt -s inherit_errexit
 : "${SHELL_LIB:?}" "${ENABLED:?}" "${FLAKE?}" "${NIXPKGS_EOL:?}"
+# The tools of the runner, LC_ALL=C and inherit_errexit.
+# shellcheck source=/dev/null
+source "$SHELL_LIB/env.sh"
+step_environment
 # shellcheck source=/dev/null
 source "$SHELL_LIB/report.sh"
 

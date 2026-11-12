@@ -5,10 +5,11 @@
 # from the API, so a rerun after the title was fixed passes. Other events have
 # no pull request; ENABLED=false switches the check off.
 set -euo pipefail
-shopt -s inherit_errexit
-# Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
-export LC_ALL=C.UTF-8
 : "${SHELL_LIB:?}" "${REPO:?}" "${EVENT?}" "${ENABLED:?}" "${TYPES?}"
+# The tools of the runner, LC_ALL=C and inherit_errexit.
+# shellcheck source=/dev/null
+source "$SHELL_LIB/env.sh"
+step_environment
 # shellcheck source=/dev/null
 source "$SHELL_LIB/github/api.sh"
 # shellcheck source=/dev/null
