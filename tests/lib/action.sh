@@ -6,7 +6,7 @@
 # consumer/action.sh and consumer/step.sh; it expects root, the repository's
 # directory.
 # shellcheck disable=SC2154 # work and current come from case.sh.
-# shellcheck disable=SC2034 # ACTIONS is read by the suites.
+# shellcheck disable=SC2034 # ACTIONS and stub_variables: read by the suites and step.sh
 
 : "${SHELL_LIB:?}" "${root:?}"
 
@@ -15,8 +15,9 @@ readonly REPO=o/r SHA=aaa
 # A locale in which ranges such as [a-z] match letters beyond ASCII, such as
 # é: the action scripts must not depend on the locale of the runner.
 readonly WIDE_LOCALE=en_US.UTF-8
-# The tools of the runner that the scripts run from SYSTEM_PATH.
-readonly RUNNER_TOOLS=(base64 bash cat env grep jq mktemp rm sed)
+# The tools of the runner that the scripts and the stubs run from
+# SYSTEM_PATH. Not nix: flake-checks runs the nix of the PATH of the job.
+readonly RUNNER_TOOLS=(base64 bash cat env grep jq mktemp rm sed touch)
 # The directory of the internal actions, ACTIONS/<name>/action.yml.
 readonly ACTIONS=$root/.github/actions
 
@@ -34,6 +35,9 @@ done
 shell_lib=$shared/shell-lib
 copy_library "$shell_lib" "$TESTING_BIN:$sysbin"
 readonly shell_lib
+# The variables of the stub of nix, which every step gets besides the
+# variables of its run line and of the stubs of the library.
+stub_variables=(NIX_SYSTEM NIX_STALE_LOCK NIX_EVAL_ERROR NIX_DECLARED NIX_CHECKS NIX_FAILED)
 
 # action_setup: setup for a run of an action script, which reads the library,
 # the repository and the commit.

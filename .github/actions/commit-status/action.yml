@@ -15,7 +15,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - shell: bash
+    - shell: /usr/bin/bash --noprofile --norc -p -e -o pipefail {0}
       env:
         SHELL_LIB: ${{ inputs.shell-lib }}
         GH_TOKEN: ${{ github.token }}
@@ -24,4 +24,7 @@ runs:
         STATE: ${{ inputs.state }}
         CONTEXT: ${{ inputs.context }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      run: '"$GITHUB_ACTION_PATH/run.sh"'
+      run: >-
+        /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
+        "$GITHUB_ACTION_PATH/scripts/step" commit-status GH_TOKEN REPO SHA STATE
+        CONTEXT RUN_URL GITHUB_STEP_SUMMARY

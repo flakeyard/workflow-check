@@ -243,11 +243,18 @@ once, as its first step after the checkout if it has one, and passes its output
 script as `SHELL_LIB`; the actions do not call the library themselves
 ([ADR-0003](docs/adr/records/0003-shell-library-and-end-of-life.md)).
 
-The actions run their `run.sh`, which sources modules of the library from
-`SHELL_LIB`: `report.sh` reports errors, notices and lines of the job summary,
-escaping the text it is given, `github/api.sh` calls the GitHub API and tells a
-missing resource from an error, `github/contents.sh` reads repository files at
-the checked commit and `github/forms.sh` holds the form of repository names and
+Each action has one step, which runs its script `scripts/step/<action>.sh`
+through `run-step.sh` of the library, with only the variables that its run line
+names ([ADR-0004][adr-0004]): earlier steps of the job cannot run code in it
+through `BASH_ENV`, exported functions or `BASH_SOURCE`. The script runs the
+tools of the runner, `SYSTEM_PATH` of `env.sh`; `flake-checks` runs the `nix`
+that `job_tool` of `env.sh` finds on the `PATH` of the job.
+
+The scripts of the actions source modules of the library from `SHELL_LIB`:
+`report.sh` reports errors, notices and lines of the job summary, escaping the
+text it is given, `github/api.sh` calls the GitHub API and tells a missing
+resource from an error, `github/contents.sh` reads repository files at the
+checked commit and `github/forms.sh` holds the form of repository names and
 lists of them. Helpers that only this repository uses are in `lib`:
 `lib/github/jobs.sh` reads the name of a job and the jobs of a run attempt,
 `lib/github/directory.sh` lists a directory at the checked commit,
@@ -268,6 +275,12 @@ without it. The tests need the library at the commit that `check.yaml` pins:
 `checks.unit` of the flake fetches it, and a direct run takes it from
 `SHELL_LIB`, such as
 `SHELL_LIB=<checkout> nix shell nixpkgs#yq-go -c tests/run.sh`.
+
+The tests run each script as its step does, with `run_step` of
+`internal/testing/consumer/step.sh` of the library: through `run-step.sh` of a
+copy of the library with only the variables of its run line, which they read
+from its `action.yml`. `run_hostile` runs it once more with `BASH_ENV`, exported
+functions and `BASH_SOURCE` that must run nothing.
 
 The repository checks itself with
 [`check-self.yaml`](.github/workflows/check-self.yaml), which calls the workflow
@@ -310,3 +323,5 @@ not released yet. Until they are:
 
 [action-flake-lock]: https://github.com/flakeyard/action-flake-lock
 [action-shell-lib]: https://github.com/flakeyard/action-shell-lib
+[adr-0004]:
+  docs/adr/records/0004-run-the-steps-of-internal-actions-through-run-step-sh.md

@@ -18,10 +18,13 @@ runs:
   using: composite
   steps:
     - id: run
-      shell: bash
+      shell: /usr/bin/bash --noprofile --norc -p -e -o pipefail {0}
       env:
         SHELL_LIB: ${{ inputs.shell-lib }}
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
         CHECK_RUN_ID: ${{ inputs.check-run-id }}
-      run: '"$GITHUB_ACTION_PATH/run.sh"'
+      run: >-
+        /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
+        "$GITHUB_ACTION_PATH/scripts/step" context GH_TOKEN REPO CHECK_RUN_ID
+        GITHUB_OUTPUT GITHUB_STEP_SUMMARY

@@ -5,12 +5,14 @@
 # satisfied only by the caller job "check".
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
-shopt -s inherit_errexit
-# Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
-export LC_ALL=C.UTF-8
 : "${SHELL_LIB:?}" "${REPO:?}" "${CHECK_RUN_ID?}"
-lib=$(dirname "$0")/../lib
-# shellcheck source=../lib/github/jobs.sh
+# The tools of the runner, LC_ALL=C and inherit_errexit.
+# shellcheck source=/dev/null
+source "$SHELL_LIB/env.sh"
+step_environment
+# From $0, which no variable of the job can set (ADR-0004).
+lib=${0%/*}/../../../lib
+# shellcheck source=../../../lib/github/jobs.sh
 source "$lib/github/jobs.sh"
 # shellcheck source=/dev/null
 source "$SHELL_LIB/report.sh"

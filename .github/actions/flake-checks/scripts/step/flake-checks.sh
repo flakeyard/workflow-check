@@ -6,14 +6,16 @@
 # summary.
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
-shopt -s inherit_errexit
-# Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
-export LC_ALL=C.UTF-8
 : "${SHELL_LIB:?}" "${FLAKE:?}" "${SYSTEM:?}" "${SYSTEMS:?}" "${EXPECT_CHECKS:?}"
-lib=$(dirname "$0")/../lib
+# The tools of the runner, LC_ALL=C and inherit_errexit.
+# shellcheck source=/dev/null
+source "$SHELL_LIB/env.sh"
+step_environment
+# From $0, which no variable of the job can set (ADR-0004).
+lib=${0%/*}/../../../lib
 # shellcheck source=/dev/null
 source "$SHELL_LIB/report.sh"
-# shellcheck source=../lib/flake.sh
+# shellcheck source=../../../lib/flake.sh
 source "$lib/flake.sh"
 
 readonly SYSTEM_FORM='^[a-z0-9_]+-[a-z0-9_]+$'
@@ -38,14 +40,14 @@ check_inputs() {
 
 check_native() {
   local nix_system
-  nix_system=$(nix config show system) || fail "cannot read the system of Nix"
+  nix_system=$("$nix" config show system) || fail "cannot read the system of Nix"
   [[ $nix_system == "$SYSTEM" ]] || fail "Nix builds for $nix_system on the runner of $SYSTEM; CI does not emulate other systems"
 }
 
 # check_systems: the flake declares exactly the systems of SYSTEMS.
 check_systems() {
   local declared given
-  declared=$(nix eval "${LOCKED[@]}" --json "$FLAKE#." --apply "$DECLARED_SYSTEMS" | jq -c 'unique') \
+  declared=$("$nix" eval "${LOCKED[@]}" --json "$FLAKE#." --apply "$DECLARED_SYSTEMS" | jq -c 'unique') \
     || fail "cannot evaluate the systems of the flake $FLAKE"
   given=$(jq -c '[.[].system] | unique' <<<"$SYSTEMS")
   [[ $declared == "$given" ]] && return 0
@@ -54,7 +56,7 @@ check_systems() {
 }
 
 check_evaluation() {
-  nix flake check "${LOCKED[@]}" --no-build --option accept-flake-config false "$FLAKE" \
+  "$nix" flake check "${LOCKED[@]}" --no-build --option accept-flake-config false "$FLAKE" \
     || fail "the flake $FLAKE does not evaluate on $SYSTEM"
 }
 
@@ -62,7 +64,7 @@ check_evaluation() {
 # expected one is missing.
 check_names() {
   local found missing
-  found=$(nix eval "${LOCKED[@]}" --json "$FLAKE#." \
+  found=$("$nix" eval "${LOCKED[@]}" --json "$FLAKE#." \
     --apply "outputs: builtins.attrNames ((outputs.checks or { }).\"$SYSTEM\" or { })") \
     || fail "cannot evaluate the checks of the flake $FLAKE"
   missing=$(jq -r --argjson found "$found" '. - $found | join(", ")' <<<"$EXPECT_CHECKS")
@@ -81,11 +83,11 @@ installable() {
 build_checks() {
   local name installables=() failed=()
   for name; do installables+=("$(installable "$name")"); done
-  nix build "${LOCKED[@]}" --no-link --print-build-logs --keep-going "${installables[@]}" || true
+  "$nix" build "${LOCKED[@]}" --no-link --print-build-logs --keep-going "${installables[@]}" || true
   summary "| Check on $SYSTEM | Result |"
   summary "| --- | --- |"
   for name; do
-    if nix path-info "${LOCKED[@]}" "$(installable "$name")" >/dev/null 2>&1; then
+    if "$nix" path-info "${LOCKED[@]}" "$(installable "$name")" >/dev/null 2>&1; then
       summary "| $(code_span "$name") | built |"
     else
       summary "| $(code_span "$name") | failed |"
@@ -96,6 +98,10 @@ build_checks() {
 }
 
 check_inputs
+# action-setup-nix puts nix on the PATH of the job; every other tool comes
+# from SYSTEM_PATH.
+nix=$(job_tool nix) \
+  || fail "no nix on the PATH of the job: install Nix before this step, such as with flakeyard/action-setup-nix"
 check_native
 # The flake check runs first: it reports a lock file that does not match.
 check_evaluation

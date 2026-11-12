@@ -24,9 +24,12 @@ runs:
   using: composite
   steps:
     - id: run
-      shell: bash
+      shell: /usr/bin/bash --noprofile --norc -p -e -o pipefail {0}
       env:
         SHELL_LIB: ${{ inputs.shell-lib }}
         FLAKE: ${{ inputs.flake }}
         ALLOW_DUPLICATES: ${{ inputs.allow-duplicates }}
-      run: '"$GITHUB_ACTION_PATH/run.sh"'
+      run: >-
+        /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
+        "$GITHUB_ACTION_PATH/scripts/step" flake-lock-inputs FLAKE
+        ALLOW_DUPLICATES GITHUB_OUTPUT

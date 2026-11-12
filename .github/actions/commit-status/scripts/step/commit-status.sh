@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Posts the commit status STATE with CONTEXT on SHA, linked to RUN_URL.
 set -euo pipefail
-shopt -s inherit_errexit
-# Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
-export LC_ALL=C.UTF-8
 : "${SHELL_LIB:?}" "${REPO:?}" "${SHA:?}" "${STATE?}" "${CONTEXT?}" "${RUN_URL:?}"
+# The tools of the runner, LC_ALL=C and inherit_errexit.
+# shellcheck source=/dev/null
+source "$SHELL_LIB/env.sh"
+step_environment
 # shellcheck source=/dev/null
 source "$SHELL_LIB/report.sh"
 
