@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.5](https://github.com/flakeyard/workflow-check/compare/v0.3.4...v0.3.5) (2026-11-12)
+
+
+### Bug Fixes
+
+* **deps:** update flakeyard/action-flake-lock action to v0.2.3 ([#82](https://github.com/flakeyard/workflow-check/issues/82)) ([06b520e](https://github.com/flakeyard/workflow-check/commit/06b520e93f079e36d58e379fa20913cc6a4295f1))
+* **deps:** update flakeyard/action-setup-nix action to v0.1.6 ([#83](https://github.com/flakeyard/workflow-check/issues/83)) ([fcc2d93](https://github.com/flakeyard/workflow-check/commit/fcc2d930adb94463cc1acfb985152ab683ca52d2))
+* **deps:** update flakeyard/action-shell-lib action to v0.2.0 ([#75](https://github.com/flakeyard/workflow-check/issues/75)) ([6123b44](https://github.com/flakeyard/workflow-check/commit/6123b44045ee308633776c8aa00c2967ccf2d190))
+* **deps:** update flakeyard/action-shell-lib action to v0.3.0 ([#77](https://github.com/flakeyard/workflow-check/issues/77)) ([ee0c5a3](https://github.com/flakeyard/workflow-check/commit/ee0c5a3b3dd661615e59e970eb6200fb8b30b9c8))
+* run the checks of meta through run-step.sh of the shell library ([#79](https://github.com/flakeyard/workflow-check/issues/79)) ([7b2bfec](https://github.com/flakeyard/workflow-check/commit/7b2bfec17573c5fd7a4c416b2cd1dbad76f91478))
+* run the flake, status and verdict actions through run-step.sh ([#80](https://github.com/flakeyard/workflow-check/issues/80)) ([18a9378](https://github.com/flakeyard/workflow-check/commit/18a937865bbd345baa976ed562d1b2c9074cbc79))
+* update action-shell-lib to v0.3.0 and record ADR-0004 ([#78](https://github.com/flakeyard/workflow-check/issues/78)) ([f6e6fc4](https://github.com/flakeyard/workflow-check/commit/f6e6fc49147edf80402473b7ab9bdde38f849558))
+
 ## [0.3.4](https://github.com/flakeyard/workflow-check/compare/v0.3.3...v0.3.4) (2026-11-12)
 
 
