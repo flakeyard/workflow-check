@@ -25,7 +25,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - shell: bash
+    - shell: /usr/bin/bash --noprofile --norc -p -e -o pipefail {0}
       env:
         SHELL_LIB: ${{ inputs.shell-lib }}
         GH_TOKEN: ${{ github.token }}
@@ -37,4 +37,8 @@ runs:
         CALLER_MAY_SKIP: ${{ inputs.caller-may-skip }}
         CHECK_MAY_SKIP: ${{ inputs.check-may-skip }}
         CHECK_RUN_ID: ${{ inputs.check-run-id }}
-      run: '"$GITHUB_ACTION_PATH/run.sh"'
+      run: >-
+        /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
+        "$GITHUB_ACTION_PATH/scripts/step" required GH_TOKEN REPO RUN_ID
+        RUN_ATTEMPT CALLER CHECK CALLER_MAY_SKIP CHECK_MAY_SKIP CHECK_RUN_ID
+        GITHUB_STEP_SUMMARY

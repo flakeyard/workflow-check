@@ -21,11 +21,15 @@ inputs:
 runs:
   using: composite
   steps:
-    - shell: bash
+    - shell: /usr/bin/bash --noprofile --norc -p -e -o pipefail {0}
       env:
         SHELL_LIB: ${{ inputs.shell-lib }}
         FLAKE: ${{ inputs.flake }}
         SYSTEM: ${{ inputs.system }}
         SYSTEMS: ${{ inputs.systems }}
         EXPECT_CHECKS: ${{ inputs.expect-checks }}
-      run: '"$GITHUB_ACTION_PATH/run.sh"'
+      run: >-
+        /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
+        "$GITHUB_ACTION_PATH/scripts/step" flake-checks FLAKE SYSTEM SYSTEMS
+        EXPECT_CHECKS GITHUB_STEP_SUMMARY PATH HOME XDG_CONFIG_HOME
+        XDG_CACHE_HOME

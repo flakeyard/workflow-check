@@ -101,11 +101,9 @@ if require_yq check.yaml; then
     == ["${{ !cancelled() }}"]'
 
   check_library_pins
-  # The actions get the library from the job; they do not call it (ADR-0003).
+  # The actions get the library from the job; they do not call it (ADR-0003),
+  # and run every step through run-step.sh (ADR-0004).
   for action in "$root"/.github/actions/*/action.yml; do
-    name=${action#"$root/"}
-    repository_check "$(load_yaml "$name")" "${name%/action.yml}: gets the library as SHELL_LIB" \
-      '(.inputs["shell-lib"].required == true)
-      and (.runs.steps | all(library | not) and all(.env.SHELL_LIB == "${{ inputs.shell-lib }}"))'
+    check_action_steps "${action#"$root/"}"
   done
 fi

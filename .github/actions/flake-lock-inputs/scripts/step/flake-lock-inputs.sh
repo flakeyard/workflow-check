@@ -5,14 +5,16 @@
 # the form of every source; this script only keeps each source on its own line.
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
-shopt -s inherit_errexit
-# Ranges such as [a-z] match only ASCII, whatever the locale of the runner.
-export LC_ALL=C.UTF-8
 : "${SHELL_LIB:?}" "${FLAKE:?}" "${ALLOW_DUPLICATES?}"
-lib=$(dirname "$0")/../lib
+# The tools of the runner, LC_ALL=C and inherit_errexit.
+# shellcheck source=/dev/null
+source "$SHELL_LIB/env.sh"
+step_environment
+# From $0, which no variable of the job can set (ADR-0004).
+lib=${0%/*}/../../../lib
 # shellcheck source=/dev/null
 source "$SHELL_LIB/report.sh"
-# shellcheck source=../lib/flake.sh
+# shellcheck source=../../../lib/flake.sh
 source "$lib/flake.sh"
 
 readonly LOCK_FILE=flake.lock
