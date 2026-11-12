@@ -6,7 +6,7 @@
 
 _None._
 
-## Accepted (4)
+## Accepted (5)
 
 - [ADR-0001](records/0001-check-pull-requests-and-pushes.md) Check pull requests
   and pushes (2026-11-05)
@@ -16,6 +16,9 @@ _None._
   the end of life of nixpkgs (2026-11-07)
 - [ADR-0004](records/0004-run-the-steps-of-internal-actions-through-run-step-sh.md)
   Run the steps of internal actions through run-step.sh (2026-11-12)
+- [ADR-0005](records/0005-override-inputs-on-a-schedule-and-forbid-configuration-files.md)
+  Override inputs on a schedule and forbid configuration files of atom tools
+  (2026-11-12)
 
 ## Rejected (0)
 
