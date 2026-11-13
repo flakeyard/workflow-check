@@ -251,6 +251,13 @@ runner.
 
 ## Development
 
+Open the repository in its dev container,
+[`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json), with
+"Reopen in Container" in VS Code or `devcontainer up --workspace-folder .`. It
+has Nix, and the checks below, such as `nix flake check`, run in it as in CI;
+tools that the image does not have come from nixpkgs, such as
+`nix run nixpkgs#actionlint`. Nix on the host works as well.
+
 The workflow in [`.github/workflows/check.yaml`](.github/workflows/check.yaml)
 only composes steps. Each step's logic is a small composite action in
 [`.github/actions`](.github/actions), released together with the workflow and
@@ -315,7 +322,7 @@ the workflows with mikefarah `yq` v4, which GitHub-hosted runners have, and fail
 without it. The tests need the library at the commit that `check.yaml` pins:
 `checks.unit` of the flake fetches it, and a direct run takes it from
 `SHELL_LIB`, such as
-`SHELL_LIB=<checkout> nix shell nixpkgs#yq-go -c tests/run.sh`.
+`SHELL_LIB=<checkout> nix shell nixpkgs#yq-go nixpkgs#jq -c tests/run.sh`.
 
 The tests run each script as its step does, with `run_step` of
 `internal/testing/consumer/step.sh` of the library: through `run-step.sh` of a
