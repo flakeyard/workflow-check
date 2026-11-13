@@ -37,6 +37,7 @@ concurrency:
 
 jobs:
   install: # the repository's own jobs, as many as it needs
+    name: install
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -154,7 +155,7 @@ that is switched off by its input succeeds with a notice.
 - `caller-may-skip` (default `[]`): JSON array of the ids of the caller's jobs
   that may be skipped; any other skipped job fails `required`. The jobs of the
   run are matched to these ids by name, so a job that may be skipped has no
-  `name:`.
+  `name:` or a name equal to its id.
 - `flake` (default `.`): the flake whose checks are built, `.` or a path below
   the repository, such as `./dev`. `""` builds none.
 - `systems` (default x86_64-linux on `ubuntu-24.04` and aarch64-linux on

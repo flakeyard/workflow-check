@@ -130,6 +130,7 @@ permissions: {}
 
 jobs:
   pending:
+    name: pending
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -151,6 +152,7 @@ jobs:
           context: ${{ steps.context.outputs.context }}
 
   meta:
+    name: meta
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -200,9 +202,10 @@ jobs:
           enabled: ${{ inputs.forbid-tool-configs }}
 
   flake:
-    # No name: GitHub names each job after its matrix values, and a job
-    # skipped before the matrix expands is named flake instead of showing an
-    # unexpanded expression.
+    # A name without expressions: GitHub appends the matrix values to it, and
+    # a job skipped before the matrix expands is named flake instead of
+    # showing an unexpanded expression.
+    name: flake
     if: ${{ !cancelled() && inputs.flake != '' }}
     strategy:
       fail-fast: false
@@ -250,6 +253,7 @@ jobs:
           override-inputs: ${{ inputs.override-inputs }}
 
   required:
+    name: required
     needs: [pending, meta, flake]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
