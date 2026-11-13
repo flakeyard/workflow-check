@@ -256,7 +256,7 @@ Open the repository in its dev container,
 "Reopen in Container" in VS Code or `devcontainer up --workspace-folder .`. It
 has Nix, and the checks below, such as `nix flake check`, run in it as in CI;
 tools that the image does not have come from nixpkgs, such as
-`nix run nixpkgs#actionlint`. Nix on the host works as well.
+`nix run nixpkgs#typos`. Nix on the host works as well.
 
 The workflow in [`.github/workflows/check.yaml`](.github/workflows/check.yaml)
 only composes steps. Each step's logic is a small composite action in
@@ -339,10 +339,11 @@ this repository on GitHub; the step may fail, and the next step checks that it
 failed exactly for the fixtures that must fail, so the run stays green. The
 flake of the repository runs the tests as `checks.unit`, and checks the scripts
 with shellcheck and shfmt (`checks.shell`) and the Nix files with nixfmt
-(`checks.formatting`). Before a pull request, run `nix flake check`, actionlint,
-zizmor, prettier, markdownlint, typos and `reuse lint`; actionlint does not yet
-know the `$/` syntax and reports it as an error. The repository releases itself
-with [workflow-release](https://github.com/flakeyard/workflow-release) through
+(`checks.formatting`); [atom-workflows][atom-workflows] lints the workflows and
+actions with actionlint and zizmor (`checks.workflows`). Before a pull request,
+run `nix flake check`, prettier, markdownlint, typos and `reuse lint`. The
+repository releases itself with
+[workflow-release](https://github.com/flakeyard/workflow-release) through
 [`release.yaml`](.github/workflows/release.yaml), whose release pull requests
 are checked by a dispatched run of `check-self.yaml`. The end of life of the
 nixpkgs branch is checked by the weekly run of `check-self.yaml`, as in every
@@ -365,8 +366,8 @@ Following
 this repository checks itself with its own workflow, but some of its checks are
 not released yet. Until they are:
 
-- actionlint, zizmor, prettier, markdownlint, typos and REUSE run locally before
-  every pull request; the atoms will provide them.
+- prettier, markdownlint, typos and REUSE run locally before every pull request;
+  the atoms will provide them.
 
 ## License
 
@@ -374,5 +375,6 @@ not released yet. Until they are:
 
 [action-flake-lock]: https://github.com/flakeyard/action-flake-lock
 [action-shell-lib]: https://github.com/flakeyard/action-shell-lib
+[atom-workflows]: https://github.com/flakeyard/atom-workflows
 [adr-0004]:
   docs/adr/records/0004-run-the-steps-of-internal-actions-through-run-step-sh.md
