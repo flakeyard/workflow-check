@@ -39,6 +39,15 @@ on:
         description: JSON array of check names that the flake must have.
         type: string
         default: "[]"
+      override-inputs:
+        description: >-
+          JSON object of the inputs of the root of the flake to override in
+          every Nix command of the flake jobs, and their flake references,
+          which start with git+https:// or github:. flake.lock stays as
+          committed. The caller chooses the runs, such as those of its
+          schedule.
+        type: string
+        default: "{}"
       extra-substituters:
         description: Binary caches to use besides cache.nixos.org.
         type: string
@@ -109,6 +118,13 @@ on:
           off; it then succeeds with a notice.
         type: boolean
         default: true
+      forbid-tool-configs:
+        description: >-
+          Fail when the repository has a configuration file of an atom tool at
+          its standard root path, such as .github/zizmor.yml. false, the
+          default, switches the check off; it then succeeds with a notice.
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -179,6 +195,11 @@ jobs:
           enabled: ${{ inputs.flake-lock }}
           flake: ${{ inputs.flake }}
           nixpkgs-eol: ${{ inputs.nixpkgs-eol }}
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/tool-configs
+        with:
+          shell-lib: ${{ steps.lib.outputs.path }}
+          enabled: ${{ inputs.forbid-tool-configs }}
 
   flake:
     # A name without expressions: GitHub appends the matrix values to it, and
@@ -229,6 +250,7 @@ jobs:
           system: ${{ matrix.system }}
           systems: ${{ inputs.systems }}
           expect-checks: ${{ inputs.expect-checks }}
+          override-inputs: ${{ inputs.override-inputs }}
 
   required:
     name: required

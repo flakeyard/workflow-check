@@ -1,0 +1,25 @@
+name: Configuration files of atom tools
+description: >-
+  Fails when the repository has a file at a standard root path of the
+  configuration of an atom tool, such as .github/zizmor.yml.
+inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
+  enabled:
+    description: "'false' switches the check off; it then succeeds with a notice."
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - shell: /usr/bin/bash --noprofile --norc -p -e -o pipefail {0}
+      env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.sha }}
+        ENABLED: ${{ inputs.enabled }}
+      run: >-
+        /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
+        "$GITHUB_ACTION_PATH/scripts/step" tool-configs GH_TOKEN REPO SHA
+        ENABLED GITHUB_STEP_SUMMARY
