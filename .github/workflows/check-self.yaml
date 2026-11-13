@@ -54,6 +54,19 @@ jobs:
             fixture: stale-lock
             expect-checks: "[]"
             outcome: failure
+          # The checks evaluate only with the input dep overridden by the
+          # fixture pass at a commit of main.
+          - case: override
+            fixture: override
+            expect-checks: '["ok"]'
+            override-inputs: >-
+              {"dep":
+              "git+https://github.com/flakeyard/workflow-check?ref=main&rev=9d89927b700cb1159755015336ad02e8a03eb254&shallow=1&dir=tests/fixtures/flakes/pass"}
+            outcome: success
+          - case: no-override
+            fixture: override
+            expect-checks: '["ok"]'
+            outcome: failure
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -76,6 +89,7 @@ jobs:
             [{"system":"x86_64-linux","runner":"ubuntu-24.04"},
             {"system":"aarch64-linux","runner":"ubuntu-24.04-arm"}]
           expect-checks: ${{ matrix.expect-checks }}
+          override-inputs: ${{ matrix.override-inputs || '{}' }}
       - env:
           OUTCOME: ${{ steps.flake-checks.outcome }}
           EXPECTED: ${{ matrix.outcome }}
@@ -95,3 +109,6 @@ jobs:
       needs: ${{ toJSON(needs) }}
       expect-checks: '["formatting","shell","unit"]'
       renovate-presets: '["flakeyard/renovate-config"]'
+      # A flakeyard repository keeps no configuration files of atom tools
+      # (FY-0037).
+      forbid-tool-configs: true

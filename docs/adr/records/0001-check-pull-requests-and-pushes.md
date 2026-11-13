@@ -95,7 +95,8 @@ own name looks like `check / lint`. A caller's job that has not completed is
 missing from `needs`. A caller's job passes only when it succeeded, or when it
 was skipped and `caller-may-skip` names it, listed in `needs` or not. Jobs of
 the attempt are matched with `caller-may-skip` by their names without matrix
-values, so a job that may be skipped sets no `name:`. The caller job runs with
+values, so a job that may be skipped sets no `name:` or one equal to its id. The
+caller job runs with
 `if: ${{ !cancelled() || github.event_name == 'workflow_dispatch' }}`, so that a
 superseded pull request run leaves no result and a dispatched run reports one on
 every outcome. The rules the caller follows are those of [FY-0034][fy-0034].

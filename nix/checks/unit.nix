@@ -5,7 +5,12 @@
 # pins, so that the pin exists once.
 {
   perSystem =
-    { pkgs, sources, ... }:
+    {
+      pkgs,
+      root,
+      sources,
+      ...
+    }:
     let
       locales = pkgs.glibcLocales.override {
         allLocales = false;
@@ -15,7 +20,7 @@
       shellLib = builtins.fetchGit {
         url = "https://github.com/flakeyard/action-shell-lib";
         rev = builtins.head (
-          builtins.match libraryPin (builtins.readFile ../../.github/workflows/check.yaml)
+          builtins.match libraryPin (builtins.readFile (root + "/.github/workflows/check.yaml"))
         );
         shallow = true;
       };
