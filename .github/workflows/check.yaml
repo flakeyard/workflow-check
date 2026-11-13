@@ -229,14 +229,14 @@ jobs:
           shell-lib: ${{ steps.lib.outputs.path }}
           flake: ${{ inputs.flake }}
           allow-duplicates: ${{ inputs.allow-duplicates }}
-      - uses: flakeyard/action-setup-nix@a221f6da7d616d4d548659d91f24f5e8f8f77fda # v0.1.6
+      - uses: flakeyard/action-setup-nix@fb341511810edd7130323f11a393d31d11216b89 # v0.1.7
         with:
           extra-substituters: ${{ inputs.extra-substituters }}
           extra-trusted-public-keys: ${{ inputs.extra-trusted-public-keys }}
       # Before the flake is evaluated. It reads releases with github.token,
       # which needs no permissions.
       - if: ${{ inputs.flake-lock }}
-        uses: flakeyard/action-flake-lock@dd397ebcf41c051143dd22eae6c64c6fad36b514 # v0.2.3
+        uses: flakeyard/action-flake-lock@e7dddc54fd1efc7a64eb3cb3b998e8f11a3e8314 # v0.3.0
         with:
           path: ${{ steps.flake-lock-inputs.outputs.path }}
           allow-duplicates: ${{ steps.flake-lock-inputs.outputs.allow-duplicates }}

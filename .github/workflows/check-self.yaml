@@ -77,7 +77,7 @@ jobs:
           persist-credentials: false
       - id: lib
         uses: flakeyard/action-shell-lib@5c59164109499a225af9b75488caf142802add84 # v0.3.1
-      - uses: flakeyard/action-setup-nix@a221f6da7d616d4d548659d91f24f5e8f8f77fda # v0.1.6
+      - uses: flakeyard/action-setup-nix@fb341511810edd7130323f11a393d31d11216b89 # v0.1.7
       - id: flake-checks
         continue-on-error: true
         uses: $/.github/actions/flake-checks
