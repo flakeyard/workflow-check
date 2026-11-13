@@ -107,7 +107,7 @@ jobs:
       statuses: write # commit statuses of dispatched runs
     with:
       needs: ${{ toJSON(needs) }}
-      expect-checks: '["formatting","shell","unit"]'
+      expect-checks: '["formatting","shell","unit","workflows"]'
       renovate-presets: '["flakeyard/renovate-config"]'
       # A flakeyard repository keeps no configuration files of atom tools
       # (FY-0037).
