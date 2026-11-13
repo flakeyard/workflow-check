@@ -24,6 +24,8 @@ stub_error() {
 # locked ARG...: the arguments keep flake.lock as it is, and it is up to date.
 locked() {
   [[ " $* " == *" $NO_LOCK_UPDATE "* ]] || stub_error "$1 without $NO_LOCK_UPDATE: $*"
+  [[ " $* " == *" $NO_LOCK_UPDATE ${NIX_OVERRIDES:-}${NIX_OVERRIDES:+ }"* ]] \
+    || stub_error "$1 without the overrides $NIX_OVERRIDES: $*"
   [[ -z ${NIX_STALE_LOCK:-} ]] && return 0
   echo "error: flake requires lock file changes but they're not allowed due to '$NO_LOCK_UPDATE'" >&2
   exit 1

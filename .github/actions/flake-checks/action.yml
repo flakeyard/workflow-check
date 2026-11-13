@@ -18,6 +18,11 @@ inputs:
   expect-checks:
     description: JSON array of check names that the flake must have.
     default: "[]"
+  override-inputs:
+    description: >-
+      JSON object of the inputs of the root to override and their flake
+      references, which start with git+https:// or github:.
+    default: "{}"
 runs:
   using: composite
   steps:
@@ -28,8 +33,9 @@ runs:
         SYSTEM: ${{ inputs.system }}
         SYSTEMS: ${{ inputs.systems }}
         EXPECT_CHECKS: ${{ inputs.expect-checks }}
+        OVERRIDE_INPUTS: ${{ inputs.override-inputs }}
       run: >-
         /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
         "$GITHUB_ACTION_PATH/scripts/step" flake-checks FLAKE SYSTEM SYSTEMS
-        EXPECT_CHECKS GITHUB_STEP_SUMMARY PATH HOME XDG_CONFIG_HOME
-        XDG_CACHE_HOME
+        EXPECT_CHECKS OVERRIDE_INPUTS GITHUB_STEP_SUMMARY PATH HOME
+        XDG_CONFIG_HOME XDG_CACHE_HOME

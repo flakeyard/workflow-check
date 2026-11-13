@@ -29,6 +29,8 @@ if require_yq check-self.yaml; then
     ".jobs.check.permissions == $CHECK_PERMISSIONS"
   self_test "renovate.json extends the presets of the organization" \
     '.jobs.check.with["renovate-presets"] | fromjson == ["flakeyard/renovate-config"]'
+  self_test "configuration files of atom tools are forbidden" \
+    '.jobs.check.with["forbid-tool-configs"] == true'
   self_test "an edit of a pull request cancels no run" \
     '.concurrency["cancel-in-progress"] | contains("github.event.action != '"'edited'"'")'
   self_test "dispatched and edited pull requests are checked" \

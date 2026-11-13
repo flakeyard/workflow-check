@@ -1,0 +1,12 @@
+# The standard root paths of the configuration files of atom tools, which
+# forbid-tool-configs forbids (ADR-0005): one path per line, below the root,
+# grouped by the atom that owns the tool. Every released atom adds its own.
+
+# atom-workflows: actionlint
+.github/actionlint.yaml
+.github/actionlint.yml
+# atom-workflows: zizmor
+.github/zizmor.yml
+.github/zizmor.yaml
+zizmor.yml
+zizmor.yaml

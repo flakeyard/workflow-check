@@ -37,6 +37,7 @@ concurrency:
 
 jobs:
   install: # the repository's own jobs, as many as it needs
+    name: install
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -72,6 +73,22 @@ The caller must:
 Require the check `check / required` with GitHub Actions as its source in the
 rulesets of the repository. Reference the workflow by full commit SHA, as above.
 
+An atom tests its checks against the current branches of its upstreams in the
+runs of its `schedule`
+([FY-0038](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0038-roll-out-the-atoms.md)):
+it passes `override-inputs` in those runs and `{}` in every other one.
+
+```yaml
+check:
+  # needs, if, uses and permissions as above
+  with:
+    needs: ${{ toJSON(needs) }}
+    override-inputs: >-
+      ${{ github.event_name == 'schedule'
+          && '{"nixpkgs": "github:NixOS/nixpkgs/nixos-26.05"}'
+          || '{}' }}
+```
+
 ## Checks
 
 - **Flake lock.** In every flake job, right after Nix is installed and before
@@ -98,7 +115,10 @@ rulesets of the repository. Reference the workflow by full commit SHA, as above.
   has the checks of `expect-checks`. Nix reads `flake.lock` as committed and
   never updates it: a lock file that is missing or lacks an input fails. It then
   builds every check of its system and lists the result of each in the job
-  summary. With `flake: ""` there are no such jobs.
+  summary. Every Nix command that reads the flake overrides the inputs of
+  `override-inputs`, and the job lists them in a notice and above the table of
+  its job summary; `flake.lock` stays as committed and is checked as in every
+  other run. With `flake: ""` there are no such jobs.
 - **Pull request title.** It follows Conventional Commits:
   `<type>[(<scope>)][!]: <description>`, with a type of `pr-title-types` and a
   scope of lower-case letters, digits and `._/-`. The title is read from the
@@ -116,6 +136,13 @@ rulesets of the repository. Reference the workflow by full commit SHA, as above.
   `_src_path` on GitHub with `_commit: vX.Y.Z`. Presets of other sources and
   templates outside GitHub fail, unless their repository is in `allow-unpinned`.
   Built-in presets of Renovate are versioned with Renovate and are not checked.
+- **Configuration files of atom tools.** With `forbid-tool-configs: true`, no
+  entry exists at a standard root path of the configuration of an atom tool,
+  such as `.github/actionlint.yaml` or `.github/zizmor.yml`: the default
+  configuration of the atom applies, and an exception is an inline comment of
+  the tool, such as `# zizmor: ignore[<audit>]`. The paths are listed, grouped
+  by atom, in
+  [`tool-configs/scripts/step/paths.txt`](.github/actions/tool-configs/scripts/step/paths.txt).
 
 Repository files are read through the contents API at the checked commit; only
 the jobs that build the flake check out the repository, and only the check of
@@ -128,13 +155,20 @@ that is switched off by its input succeeds with a notice.
 - `caller-may-skip` (default `[]`): JSON array of the ids of the caller's jobs
   that may be skipped; any other skipped job fails `required`. The jobs of the
   run are matched to these ids by name, so a job that may be skipped has no
-  `name:`.
+  `name:` or a name equal to its id.
 - `flake` (default `.`): the flake whose checks are built, `.` or a path below
   the repository, such as `./dev`. `""` builds none.
 - `systems` (default x86_64-linux on `ubuntu-24.04` and aarch64-linux on
   `ubuntu-24.04-arm`): JSON array of `{"system": ..., "runner": ...}`, a runner
   for every system the flake declares.
 - `expect-checks` (default `[]`): JSON array of the checks the flake must have.
+- `override-inputs` (default `{}`): JSON object of the inputs of the root of the
+  flake to override in the flake jobs and their flake references, such as
+  `{"nixpkgs": "git+https://github.com/NixOS/nixpkgs?ref=nixos-26.05&shallow=1"}`.
+  A name has the form `^[A-Za-z_][A-Za-z0-9_-]*$`, and a reference starts with
+  `git+https://` or `github:` and has no whitespace or control characters;
+  anything else fails the flake jobs before Nix runs. The caller chooses the
+  runs that override, such as those of its `schedule`.
 - `extra-substituters`, `extra-trusted-public-keys` (default `""`): binary
   caches besides `cache.nixos.org`, passed to action-setup-nix.
 - `timeout-minutes` (default `60`): timeout of each flake job.
@@ -156,6 +190,11 @@ that is switched off by its input succeeds with a notice.
   broken tool.
 - `nixpkgs-eol` (default `true`): check the end of life of the nixpkgs branches
   of `flake.lock` with action-flake-lock.
+- `forbid-tool-configs` (default `false`): fail on configuration files of atom
+  tools at their standard root paths. flakeyard's own repositories switch it on
+  ([FY-0037](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0037-atoms-ship-default-configs-that-projects-replace.md));
+  other projects may replace the default configurations of the atoms and leave
+  it off.
 
 The workflow takes no secrets and has no outputs.
 
@@ -224,6 +263,8 @@ referenced with `$/`:
   preset of the given repositories;
 - `release-tags`: every Renovate preset and Copier template is pinned to the tag
   of an immutable GitHub release;
+- `tool-configs`: no configuration file of an atom tool exists at a path of its
+  `paths.txt`;
 - `flake-lock-notice`: a notice in `meta` when the check of `flake.lock` or its
   check of the end of life of nixpkgs is switched off, or there is no flake;
 - `flake-lock-inputs`: the lock file of the flake and `allow-duplicates` as the
@@ -286,7 +327,8 @@ The repository checks itself with
 [`check-self.yaml`](.github/workflows/check-self.yaml), which calls the workflow
 of the same commit through `$/`, so a pull request is checked by its own
 version. Its job `fixtures` runs `flake-checks` on the flakes in
-`tests/fixtures/flakes`; the step may fail, and the next step checks that it
+`tests/fixtures/flakes`, one of them with an input overridden by a revision of
+this repository on GitHub; the step may fail, and the next step checks that it
 failed exactly for the fixtures that must fail, so the run stays green. The
 flake of the repository runs the tests as `checks.unit`, and checks the scripts
 with shellcheck and shfmt (`checks.shell`) and the Nix files with nixfmt
@@ -298,8 +340,10 @@ with [workflow-release](https://github.com/flakeyard/workflow-release) through
 are checked by a dispatched run of `check-self.yaml`. The end of life of the
 nixpkgs branch is checked by the weekly run of `check-self.yaml`, as in every
 caller. The design of the workflow is recorded in
-[ADR-0001](docs/adr/records/0001-check-pull-requests-and-pushes.md) and the
-check of `flake.lock` in [ADR-0002](docs/adr/records/0002-check-flake-lock.md),
+[ADR-0001](docs/adr/records/0001-check-pull-requests-and-pushes.md), the check
+of `flake.lock` in [ADR-0002](docs/adr/records/0002-check-flake-lock.md) and the
+overridden inputs and the check of configuration files of atom tools in
+[ADR-0005](docs/adr/records/0005-override-inputs-on-a-schedule-and-forbid-configuration-files.md),
 under [`docs/adr`](docs/adr); the rules for callers are those of
 [FY-0034](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0034-check-every-repository-with-workflow-check.md);
 both follow
