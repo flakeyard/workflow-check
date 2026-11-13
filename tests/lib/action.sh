@@ -37,7 +37,7 @@ copy_library "$shell_lib" "$TESTING_BIN:$sysbin"
 readonly shell_lib
 # The variables of the stub of nix, which every step gets besides the
 # variables of its run line and of the stubs of the library.
-stub_variables=(NIX_SYSTEM NIX_STALE_LOCK NIX_EVAL_ERROR NIX_DECLARED NIX_CHECKS NIX_FAILED)
+stub_variables=(NIX_SYSTEM NIX_STALE_LOCK NIX_EVAL_ERROR NIX_DECLARED NIX_CHECKS NIX_FAILED NIX_OVERRIDES)
 
 # action_setup: setup for a run of an action script, which reads the library,
 # the repository and the commit.

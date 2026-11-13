@@ -99,6 +99,10 @@ if require_yq check.yaml; then
   check_test "flake-checks runs also when the check of flake.lock failed" \
     '[.jobs.flake.steps[] | select(.uses == "$/.github/actions/flake-checks") | condition]
     == ["${{ !cancelled() }}"]'
+  check_test "flake-checks overrides the inputs of the caller, none by default" \
+    '([.jobs.flake.steps[] | select(.uses == "$/.github/actions/flake-checks") | .with["override-inputs"]]
+    == ["${{ inputs.override-inputs }}"])
+    and (.on.workflow_call.inputs["override-inputs"] | .type == "string" and .default == "{}")'
 
   check_library_pins
   # The actions get the library from the job; they do not call it (ADR-0003),
