@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/flakeyard/workflow-check/compare/v0.3.5...v0.4.0) (2026-11-13)
+
+
+### Features
+
+* forbid configuration files of atom tools ([#89](https://github.com/flakeyard/workflow-check/issues/89)) ([3a722b4](https://github.com/flakeyard/workflow-check/commit/3a722b427cd3399532caac860b006118526ca1de))
+* override inputs of the flake in the flake jobs ([#88](https://github.com/flakeyard/workflow-check/issues/88)) ([c44fa30](https://github.com/flakeyard/workflow-check/commit/c44fa301a5ed2ee303ef3b7fe2add5b990e71555))
+
+
+### Bug Fixes
+
+* **deps:** update flakeyard/action-flake-lock action to v0.3.0 ([#99](https://github.com/flakeyard/workflow-check/issues/99)) ([1e3083d](https://github.com/flakeyard/workflow-check/commit/1e3083deed1a61001379b739479ed687ce335b3b))
+* **deps:** update flakeyard/action-setup-nix action to v0.1.7 ([#98](https://github.com/flakeyard/workflow-check/issues/98)) ([3967df3](https://github.com/flakeyard/workflow-check/commit/3967df3363fc5f800c733874bd194c0dd13feead))
+* **deps:** update flakeyard/action-shell-lib action to v0.3.1 ([#86](https://github.com/flakeyard/workflow-check/issues/86)) ([df58fd8](https://github.com/flakeyard/workflow-check/commit/df58fd8e9599c01a9e5556a8e08dc974ea92ffdd))
+* name every job of check.yaml after its id ([#87](https://github.com/flakeyard/workflow-check/issues/87)) ([73de178](https://github.com/flakeyard/workflow-check/commit/73de1785c182a8ebe95c1ced89ddf0ced66ce969))
+
 ## [0.3.5](https://github.com/flakeyard/workflow-check/compare/v0.3.4...v0.3.5) (2026-11-12)
 
 
