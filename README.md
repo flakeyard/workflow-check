@@ -135,6 +135,13 @@ check:
   `_src_path` on GitHub with `_commit: vX.Y.Z`. Presets of other sources and
   templates outside GitHub fail, unless their repository is in `allow-unpinned`.
   Built-in presets of Renovate are versioned with Renovate and are not checked.
+- **Configuration files of atom tools.** With `forbid-tool-configs: true`, no
+  entry exists at a standard root path of the configuration of an atom tool,
+  such as `.github/actionlint.yaml` or `.github/zizmor.yml`: the default
+  configuration of the atom applies, and an exception is an inline comment of
+  the tool, such as `# zizmor: ignore[<audit>]`. The paths are listed, grouped
+  by atom, in
+  [`tool-configs/scripts/step/paths.txt`](.github/actions/tool-configs/scripts/step/paths.txt).
 
 Repository files are read through the contents API at the checked commit; only
 the jobs that build the flake check out the repository, and only the check of
@@ -182,6 +189,11 @@ that is switched off by its input succeeds with a notice.
   broken tool.
 - `nixpkgs-eol` (default `true`): check the end of life of the nixpkgs branches
   of `flake.lock` with action-flake-lock.
+- `forbid-tool-configs` (default `false`): fail on configuration files of atom
+  tools at their standard root paths. flakeyard's own repositories switch it on
+  ([FY-0037](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0037-atoms-ship-default-configs-that-projects-replace.md));
+  other projects may replace the default configurations of the atoms and leave
+  it off.
 
 The workflow takes no secrets and has no outputs.
 
@@ -250,6 +262,8 @@ referenced with `$/`:
   preset of the given repositories;
 - `release-tags`: every Renovate preset and Copier template is pinned to the tag
   of an immutable GitHub release;
+- `tool-configs`: no configuration file of an atom tool exists at a path of its
+  `paths.txt`;
 - `flake-lock-notice`: a notice in `meta` when the check of `flake.lock` or its
   check of the end of life of nixpkgs is switched off, or there is no flake;
 - `flake-lock-inputs`: the lock file of the flake and `allow-duplicates` as the
@@ -327,7 +341,7 @@ nixpkgs branch is checked by the weekly run of `check-self.yaml`, as in every
 caller. The design of the workflow is recorded in
 [ADR-0001](docs/adr/records/0001-check-pull-requests-and-pushes.md), the check
 of `flake.lock` in [ADR-0002](docs/adr/records/0002-check-flake-lock.md) and the
-overridden inputs in
+overridden inputs and the check of configuration files of atom tools in
 [ADR-0005](docs/adr/records/0005-override-inputs-on-a-schedule-and-forbid-configuration-files.md),
 under [`docs/adr`](docs/adr); the rules for callers are those of
 [FY-0034](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0034-check-every-repository-with-workflow-check.md);
