@@ -15,35 +15,35 @@ export SHELL_LIB=${SHELL_LIB:?the directory of action-shell-lib at the commit pi
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 # The paths that run and run_lib take, and that yaml.sh reads.
 # shellcheck disable=SC2034 # read by checks.sh and yaml.sh of the library
-code_root=$root
+code_root=${root}
 # The stub of nix, on the PATH that the code under test gets.
-PATH=$root/tests/bin:$PATH
+PATH=${root}/tests/bin:${PATH}
 
-testing=$SHELL_LIB/internal/testing
+testing=${SHELL_LIB}/internal/testing
 # shellcheck source=/dev/null
-source "$testing/case.sh"
+source "${testing}/case.sh"
 # shellcheck source=/dev/null
-source "$testing/checks.sh"
+source "${testing}/checks.sh"
 # shellcheck source=/dev/null
-source "$testing/fixtures.sh"
+source "${testing}/fixtures.sh"
 # shellcheck source=/dev/null
-source "$testing/yaml.sh"
+source "${testing}/yaml.sh"
 # shellcheck source=/dev/null
-source "$testing/workflow.sh"
+source "${testing}/workflow.sh"
 # shellcheck source=/dev/null
-source "$testing/consumer/action.sh"
+source "${testing}/consumer/action.sh"
 # shellcheck source=/dev/null
-source "$testing/consumer/library.sh"
+source "${testing}/consumer/library.sh"
 # shellcheck source=/dev/null
-source "$testing/consumer/step.sh"
+source "${testing}/consumer/step.sh"
 # shellcheck source=lib/action.sh
-source "$root/tests/lib/action.sh"
+source "${root}/tests/lib/action.sh"
 # shellcheck source=lib/workflow.sh
-source "$root/tests/lib/workflow.sh"
+source "${root}/tests/lib/workflow.sh"
 
-for suite in "$root"/tests/unit/**/*.sh; do
+for suite in "${root}"/tests/unit/**/*.sh; do
   # shellcheck source=/dev/null
-  source "$suite"
+  source "${suite}"
 done
 
 conclude

@@ -6,13 +6,13 @@ set -euo pipefail
 : "${SHELL_LIB:?}" "${EVENT?}"
 # The tools of the runner, LC_ALL=C and inherit_errexit.
 # shellcheck source=/dev/null
-source "$SHELL_LIB/env.sh"
+source "${SHELL_LIB}/env.sh"
 step_environment
 # shellcheck source=/dev/null
-source "$SHELL_LIB/report.sh"
+source "${SHELL_LIB}/report.sh"
 
 readonly SUPPORTED_EVENTS='^(pull_request|push|schedule|workflow_dispatch)$'
 
-[[ $EVENT =~ $SUPPORTED_EVENTS ]] \
-  || fail "the check workflow runs on pull_request, push, schedule and workflow_dispatch, not $EVENT"
-summary "event: $(code_span "$EVENT")"
+[[ ${EVENT} =~ ${SUPPORTED_EVENTS} ]] \
+  || fail "the check workflow runs on pull_request, push, schedule and workflow_dispatch, not ${EVENT}"
+summary "event: $(code_span "${EVENT}")"

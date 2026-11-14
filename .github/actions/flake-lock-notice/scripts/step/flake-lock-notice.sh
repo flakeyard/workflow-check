@@ -9,16 +9,16 @@ set -euo pipefail
 : "${SHELL_LIB:?}" "${ENABLED:?}" "${FLAKE?}" "${NIXPKGS_EOL:?}"
 # The tools of the runner, LC_ALL=C and inherit_errexit.
 # shellcheck source=/dev/null
-source "$SHELL_LIB/env.sh"
+source "${SHELL_LIB}/env.sh"
 step_environment
 # shellcheck source=/dev/null
-source "$SHELL_LIB/report.sh"
+source "${SHELL_LIB}/report.sh"
 
-if [[ $ENABLED != true ]]; then
+if [[ ${ENABLED} != true ]]; then
   notice "the flake.lock check is off, and with it the end-of-life check of nixpkgs"
-elif [[ -z $FLAKE ]]; then
+elif [[ -z ${FLAKE} ]]; then
   notice "no flake; no flake.lock to check"
 else
-  summary "flake.lock of $(code_span "$FLAKE"): checked in the flake jobs"
-  [[ $NIXPKGS_EOL == true ]] || notice "the end-of-life check of nixpkgs is off"
+  summary "flake.lock of $(code_span "${FLAKE}"): checked in the flake jobs"
+  [[ ${NIXPKGS_EOL} == true ]] || notice "the end-of-life check of nixpkgs is off"
 fi

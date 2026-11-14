@@ -8,7 +8,7 @@
 readonly CALLER_CONDITION="\${{ !cancelled() || github.event_name == 'workflow_dispatch' }}"
 
 # self_test NAME FILTER: FILTER is true of check-self.yaml.
-self_test() { repository_check "$self_workflow" "check-self.yaml: $1" "$2"; }
+self_test() { repository_check "${self_workflow}" "check-self.yaml: $1" "$2"; }
 
 if require_yq check-self.yaml; then
   self_workflow=$(load_workflow check-self.yaml)
@@ -24,9 +24,9 @@ if require_yq check-self.yaml; then
   self_test "no job needs check" \
     '[.jobs[] | .needs // [] | .[] | select(. == "check")] == []'
   self_test "check runs unless cancelled, and always on dispatch" \
-    ".jobs.check | condition == \"$CALLER_CONDITION\""
+    ".jobs.check | condition == \"${CALLER_CONDITION}\""
   self_test "check gets the permissions of the product workflow" \
-    ".jobs.check.permissions == $CHECK_PERMISSIONS"
+    ".jobs.check.permissions == ${CHECK_PERMISSIONS}"
   self_test "renovate.json extends the presets of the organization" \
     '.jobs.check.with["renovate-presets"] | fromjson == ["flakeyard/renovate-config"]'
   self_test "configuration files of atom tools are forbidden" \

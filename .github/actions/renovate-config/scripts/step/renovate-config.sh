@@ -9,20 +9,20 @@ set -euo pipefail
 : "${SHELL_LIB:?}" "${REPO:?}" "${SHA:?}" "${ENABLED:?}" "${PRESETS?}"
 # The tools of the runner, LC_ALL=C and inherit_errexit.
 # shellcheck source=/dev/null
-source "$SHELL_LIB/env.sh"
+source "${SHELL_LIB}/env.sh"
 step_environment
 # From $0, which no variable of the job can set (ADR-0004).
 lib=${0%/*}/../../../lib
 # shellcheck source=/dev/null
-source "$SHELL_LIB/github/contents.sh"
+source "${SHELL_LIB}/github/contents.sh"
 # shellcheck source=/dev/null
-source "$SHELL_LIB/github/forms.sh"
+source "${SHELL_LIB}/github/forms.sh"
 # shellcheck source=../../../lib/github/directory.sh
-source "$lib/github/directory.sh"
+source "${lib}/github/directory.sh"
 # shellcheck source=../../../lib/renovate.sh
-source "$lib/renovate.sh"
+source "${lib}/renovate.sh"
 # shellcheck source=/dev/null
-source "$SHELL_LIB/report.sh"
+source "${SHELL_LIB}/report.sh"
 
 readonly CONFIG=renovate.json
 # The other files that Renovate reads its configuration from.
@@ -46,19 +46,19 @@ declare -A types=()
 # to types; exits on an error of the API.
 list_dir() {
   local dir=$1 listing type path
-  listing=$(directory_at "$dir" "$SHA") || fail "cannot list ${dir:-the root} at $SHA"
+  listing=$(directory_at "${dir}" "${SHA}") || fail "cannot list ${dir:-the root} at ${SHA}"
   while read -r type path; do
-    types[$path]=$type
-  done < <(jq -r --arg dir "$dir" "$ENTRY_PATHS" <<<"$listing")
+    types[${path}]=${type}
+  done < <(jq -r --arg dir "${dir}" "${ENTRY_PATHS}" <<<"${listing}")
 }
 
 # list_config_dirs: add the entries of the root, and of each directory of
 # CONFIG_DIRS that it has, to types.
 list_config_dirs() {
   local dir
-  list_dir "$ROOT_DIR"
+  list_dir "${ROOT_DIR}"
   for dir in "${CONFIG_DIRS[@]}"; do
-    if [[ ${types[$dir]-} == dir ]]; then list_dir "$dir"; fi
+    if [[ ${types[${dir}]-} == dir ]]; then list_dir "${dir}"; fi
   done
 }
 
@@ -68,18 +68,18 @@ exists() {
 }
 
 check_presets_input() {
-  is_repository_list "$PRESETS" || fail "renovate-presets is not a JSON array of owner/repo"
+  is_repository_list "${PRESETS}" || fail "renovate-presets is not a JSON array of owner/repo"
 }
 
 check_other_configs() {
   local path
   list_config_dirs
   for path in "${OTHER_CONFIGS[@]}"; do
-    if exists "$path"; then problem "remove $path: $CONFIG must be the only Renovate configuration"; fi
+    if exists "${path}"; then problem "remove ${path}: ${CONFIG} must be the only Renovate configuration"; fi
   done
-  if exists "$PACKAGE_JSON" && file_at "$PACKAGE_JSON" "$SHA" \
+  if exists "${PACKAGE_JSON}" && file_at "${PACKAGE_JSON}" "${SHA}" \
     | jq -e 'type == "object" and has("renovate")' >/dev/null 2>&1; then
-    problem "remove the key renovate of $PACKAGE_JSON: $CONFIG must be the only Renovate configuration"
+    problem "remove the key renovate of ${PACKAGE_JSON}: ${CONFIG} must be the only Renovate configuration"
   fi
 }
 
@@ -87,43 +87,43 @@ check_other_configs() {
 # PRESETS, compared without case as GitHub does.
 extends_listed_preset() {
   local config=$1 preset repository
-  [[ $(jq length <<<"$PRESETS") != 0 ]] || return 0
+  [[ $(jq length <<<"${PRESETS}") != 0 ]] || return 0
   while IFS= read -r preset; do
-    repository=$(preset_repository "$preset") || continue
-    lists_repository "$PRESETS" "$repository" && return 0
-  done < <(jq -r '.extends[]' <<<"$config")
+    repository=$(preset_repository "${preset}") || continue
+    lists_repository "${PRESETS}" "${repository}" && return 0
+  done < <(jq -r '.extends[]' <<<"${config}")
   return 1
 }
 
 # check_config CONFIG: the content of renovate.json has the expected form.
 check_config() {
   local config=$1
-  jq -e 'type == "object"' <<<"$config" >/dev/null 2>&1 \
+  jq -e 'type == "object"' <<<"${config}" >/dev/null 2>&1 \
     || {
-      problem "$CONFIG is not a JSON object"
+      problem "${CONFIG} is not a JSON object"
       return
     }
-  jq -e "$PRESET_LIST_DEF"' .extends | preset_list and length > 0' <<<"$config" >/dev/null \
+  jq -e "${PRESET_LIST_DEF}"' .extends | preset_list and length > 0' <<<"${config}" >/dev/null \
     || {
-      problem "$CONFIG must extend presets: extends must be a non-empty array of one-line strings"
+      problem "${CONFIG} must extend presets: extends must be a non-empty array of one-line strings"
       return
     }
-  extends_listed_preset "$config" \
-    || problem "$CONFIG must extend a preset of one of: $(jq -r 'join(", ")' <<<"$PRESETS")"
+  extends_listed_preset "${config}" \
+    || problem "${CONFIG} must extend a preset of one of: $(jq -r 'join(", ")' <<<"${PRESETS}")"
 }
 
 check_renovate_json() {
   local config status=0
-  config=$(file_at "$CONFIG" "$SHA" 2>/dev/null) || status=$?
+  config=$(file_at "${CONFIG}" "${SHA}" 2>/dev/null) || status=$?
   if ((status == NOT_FOUND)); then
-    problem "$CONFIG is missing: the repository needs its own Renovate configuration"
+    problem "${CONFIG} is missing: the repository needs its own Renovate configuration"
     return
   fi
-  ((status == 0)) || fail "cannot read $CONFIG at $SHA"
-  check_config "$config"
+  ((status == 0)) || fail "cannot read ${CONFIG} at ${SHA}"
+  check_config "${config}"
 }
 
-if [[ $ENABLED != true ]]; then
+if [[ ${ENABLED} != true ]]; then
   notice "the renovate.json check is off"
   exit 0
 fi
@@ -132,4 +132,4 @@ check_other_configs
 check_renovate_json
 flush
 ! has_problems || exit 1
-summary "$(code_span "$CONFIG") is the only Renovate configuration and extends a listed preset"
+summary "$(code_span "${CONFIG}") is the only Renovate configuration and extends a listed preset"

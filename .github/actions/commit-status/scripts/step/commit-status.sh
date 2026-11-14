@@ -4,17 +4,17 @@ set -euo pipefail
 : "${SHELL_LIB:?}" "${REPO:?}" "${SHA:?}" "${STATE?}" "${CONTEXT?}" "${RUN_URL:?}"
 # The tools of the runner, LC_ALL=C and inherit_errexit.
 # shellcheck source=/dev/null
-source "$SHELL_LIB/env.sh"
+source "${SHELL_LIB}/env.sh"
 step_environment
 # shellcheck source=/dev/null
-source "$SHELL_LIB/report.sh"
+source "${SHELL_LIB}/report.sh"
 
 readonly STATES='^(pending|success|failure)$'
 readonly DESCRIPTION='GitHub Actions run'
 
-[[ $STATE =~ $STATES ]] || fail "not a commit status state: $STATE"
-[[ -n $CONTEXT ]] || fail "the status context is empty"
-gh api --silent -X POST "repos/$REPO/statuses/$SHA" \
-  -f state="$STATE" -f context="$CONTEXT" -f target_url="$RUN_URL" \
-  -f description="$DESCRIPTION"
-summary "posted $STATE as $(code_span "$CONTEXT") on $SHA"
+[[ ${STATE} =~ ${STATES} ]] || fail "not a commit status state: ${STATE}"
+[[ -n ${CONTEXT} ]] || fail "the status context is empty"
+gh api --silent -X POST "repos/${REPO}/statuses/${SHA}" \
+  -f state="${STATE}" -f context="${CONTEXT}" -f target_url="${RUN_URL}" \
+  -f description="${DESCRIPTION}"
+summary "posted ${STATE} as $(code_span "${CONTEXT}") on ${SHA}"
