@@ -253,10 +253,18 @@ runner.
 
 Open the repository in its dev container,
 [`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json), with
-"Reopen in Container" in VS Code or `devcontainer up --workspace-folder .`. It
-has Nix, and the checks below, such as `nix flake check`, run in it as in CI;
-tools that the image does not have come from nixpkgs, such as
-`nix run nixpkgs#typos`. Nix on the host works as well.
+"Reopen in Container" in VS Code or `devcontainer up --workspace-folder .`.
+`direnv` loads the development shell of [`flake.nix`](flake.nix) through
+[`.envrc`](.envrc) ([FY-0012][fy-0012]): [atom-workspace][atom-workspace] joins
+the tools of the atoms and `jq` and mikefarah `yq` for `tests/run.sh`, and
+installs the git hooks each time the shell starts. The container runs
+`direnv allow` when it is created; run it once in every other worktree, and run
+`direnv block` before you check out a branch you do not trust, since entering
+the directory runs that branch's shell hook. Commit inside the container, whose
+Nix store has the tools of the hooks. The checks below, such as
+`nix flake check`, run in it as in CI; tools that the shell does not have come
+from nixpkgs, such as `nix run nixpkgs#typos`. Nix on the host works as well:
+`direnv allow` or `nix develop` gives the same shell.
 
 The workflow in [`.github/workflows/check.yaml`](.github/workflows/check.yaml)
 only composes steps. Each step's logic is a small composite action in
@@ -321,8 +329,7 @@ that the repository's own CI calls the workflow as every caller must. They read
 the workflows with mikefarah `yq` v4, which GitHub-hosted runners have, and fail
 without it. The tests need the library at the commit that `check.yaml` pins:
 `checks.unit` of the flake fetches it, and a direct run takes it from
-`SHELL_LIB`, such as
-`SHELL_LIB=<checkout> nix shell nixpkgs#yq-go nixpkgs#jq -c tests/run.sh`.
+`SHELL_LIB`, such as `SHELL_LIB=<checkout> tests/run.sh`.
 
 The tests run each script as its step does, with `run_step` of
 `internal/testing/consumer/step.sh` of the library: through `run-step.sh` of a
@@ -378,3 +385,6 @@ not released yet. Until they are:
 [atom-workflows]: https://github.com/flakeyard/atom-workflows
 [adr-0004]:
   docs/adr/records/0004-run-the-steps-of-internal-actions-through-run-step-sh.md
+[atom-workspace]: https://github.com/flakeyard/atom-workspace
+[fy-0012]:
+  https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0012-develop-in-container.md
