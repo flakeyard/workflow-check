@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/flakeyard/workflow-check/compare/v0.4.0...v0.5.0) (2026-11-15)
+
+
+### Features
+
+* forbid the configuration files of statix and shellcheck ([#108](https://github.com/flakeyard/workflow-check/issues/108)) ([e852f04](https://github.com/flakeyard/workflow-check/commit/e852f045d4b6e10e41be2c393d7f2664b0da729e))
+
+
+### Bug Fixes
+
+* **deps:** update flakeyard/action-flake-lock action to v0.3.1 ([#114](https://github.com/flakeyard/workflow-check/issues/114)) ([9d306a6](https://github.com/flakeyard/workflow-check/commit/9d306a675408a55c14880bc0225109d77c7badb2))
+* **deps:** update flakeyard/action-setup-nix action to v0.1.8 ([#115](https://github.com/flakeyard/workflow-check/issues/115)) ([922a850](https://github.com/flakeyard/workflow-check/commit/922a8507b84c16fd56950cd0c178ef8f02c4448a))
+* **deps:** update flakeyard/action-shell-lib action to v0.3.2 ([#111](https://github.com/flakeyard/workflow-check/issues/111)) ([c9564a1](https://github.com/flakeyard/workflow-check/commit/c9564a19afa6d89b80a4b2ef5714c9d4bea4eb9d))
+* keep the exit codes of command substitutions and of functions under set -e ([#105](https://github.com/flakeyard/workflow-check/issues/105)) ([a8da3a3](https://github.com/flakeyard/workflow-check/commit/a8da3a38b7c178cb253f7e280eaf28f15a05719e))
+
 ## [0.4.0](https://github.com/flakeyard/workflow-check/compare/v0.3.5...v0.4.0) (2026-11-13)
 
 
