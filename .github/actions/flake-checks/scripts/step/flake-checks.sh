@@ -55,7 +55,7 @@ check_inputs() {
 # --override-input for each of its inputs to flake_options, and the inputs to
 # overridden.
 check_overrides() {
-  local problems line name reference
+  local problems line name reference entries
   jq -e 'type == "object"' <<<"${OVERRIDE_INPUTS}" >/dev/null 2>&1 \
     || fail "override-inputs is not a JSON object"
   problems=$(jq -r --arg form "${INPUT_NAME_FORM}" --argjson schemes "${REFERENCE_SCHEMES}" \
@@ -71,23 +71,28 @@ check_overrides() {
   done <<<"${problems}"
   flush
   ! has_problems || exit 1
-  # Names and references hold no NUL, which separates them.
-  while IFS= read -r -d '' name && IFS= read -r -d '' reference; do
+  # Names and references hold no whitespace, as checked above, so a tab
+  # separates them.
+  entries=$(jq -r 'to_entries[] | "\(.key)\t\(.value)"' <<<"${OVERRIDE_INPUTS}")
+  while IFS=$'\t' read -r name reference; do
+    [[ -n ${name} ]] || continue
     flake_options+=(--override-input "${name}" "${reference}")
     overridden+=("${name}" "${reference}")
-  done < <(jq -j 'to_entries[] | .key, "\u0000", .value, "\u0000"' <<<"${OVERRIDE_INPUTS}")
+  done <<<"${entries}"
 }
 
 # report_overrides: list the overridden inputs with their references in a
 # notice and in the job summary, above the table of the checks.
 report_overrides() {
-  local i list=""
+  local i list="" name reference
   ((${#overridden[@]} > 0)) || return 0
   summary "Inputs overridden on ${SYSTEM}:"
   summary ""
   for ((i = 0; i < ${#overridden[@]}; i += 2)); do
     list+="${list:+, }${overridden[i]} = ${overridden[i + 1]}"
-    summary "- $(code_span "${overridden[i]}"): $(code_span "${overridden[i + 1]}")"
+    name=$(code_span "${overridden[i]}")
+    reference=$(code_span "${overridden[i + 1]}")
+    summary "- ${name}: ${reference}"
   done
   summary ""
   notice "inputs overridden on ${SYSTEM}: ${list}"
@@ -101,13 +106,14 @@ check_native() {
 
 # check_systems: the flake declares exactly the systems of SYSTEMS.
 check_systems() {
-  local declared given
+  local declared given message
   declared=$("${nix}" eval "${flake_options[@]}" --json "${FLAKE}#." --apply "${DECLARED_SYSTEMS}" | jq -c 'unique') \
     || fail "cannot evaluate the systems of the flake ${FLAKE}"
   given=$(jq -c '[.[].system] | unique' <<<"${SYSTEMS}")
   [[ ${declared} == "${given}" ]] && return 0
-  fail "$(jq -rn --argjson declared "${declared}" --argjson given "${given}" '
-    "the flake declares the systems \($declared | join(", ")) but has runners for \($given | join(", "))"')"
+  message=$(jq -rn --argjson declared "${declared}" --argjson given "${given}" '
+    "the flake declares the systems \($declared | join(", ")) but has runners for \($given | join(", "))"')
+  fail "${message}"
 }
 
 check_evaluation() {
@@ -118,7 +124,7 @@ check_evaluation() {
 # check_names: set names to the names of the checks for SYSTEM; fails when an
 # expected one is missing.
 check_names() {
-  local found missing
+  local found missing listed
   found=$("${nix}" eval "${flake_options[@]}" --json "${FLAKE}#." \
     --apply "outputs: builtins.attrNames ((outputs.checks or { }).\"${SYSTEM}\" or { })") \
     || fail "cannot evaluate the checks of the flake ${FLAKE}"
@@ -126,7 +132,10 @@ check_names() {
   [[ -z ${missing} ]] || fail "the flake ${FLAKE} has no checks.${SYSTEM} of: ${missing}"
   jq -e --arg form "${CHECK_NAME_FORM}" 'all(.[]; test($form))' <<<"${found}" >/dev/null \
     || fail "check names must match ${CHECK_NAME_FORM}"
-  mapfile -t names < <(jq -r '.[]' <<<"${found}")
+  listed=$(jq -r '.[]' <<<"${found}")
+  names=()
+  # A check name matches CHECK_NAME_FORM, so an empty line is no name.
+  [[ -z ${listed} ]] || mapfile -t names <<<"${listed}"
 }
 
 # installable NAME: the installable of the check NAME for SYSTEM.
@@ -136,16 +145,18 @@ installable() {
 
 # build_checks NAME...: build every check, then report which were built.
 build_checks() {
-  local name installables=() failed=()
+  local name installables=() failed=() target span
   for name; do installables+=("$(installable "${name}")"); done
   "${nix}" build "${flake_options[@]}" --no-link --print-build-logs --keep-going "${installables[@]}" || true
   summary "| Check on ${SYSTEM} | Result |"
   summary "| --- | --- |"
   for name; do
-    if "${nix}" path-info "${flake_options[@]}" "$(installable "${name}")" >/dev/null 2>&1; then
-      summary "| $(code_span "${name}") | built |"
+    target=$(installable "${name}")
+    span=$(code_span "${name}")
+    if "${nix}" path-info "${flake_options[@]}" "${target}" >/dev/null 2>&1; then
+      summary "| ${span} | built |"
     else
-      summary "| $(code_span "${name}") | failed |"
+      summary "| ${span} | failed |"
       failed+=("${name}")
     fi
   done

@@ -26,17 +26,13 @@ title_rule() {
   printf '^(%s)%s\n' "${TYPES// /|}" "${AFTER_TYPE}"
 }
 
-# is_single_line TEXT: TEXT has no line break.
-is_single_line() {
-  [[ $1 != *[$'\n\r']* ]]
-}
-
 # check_title NUMBER TITLE: report whether pull request NUMBER has a title
-# that follows the rule; a problem when it does not.
+# that follows the rule, on one line; a problem when it does not.
 check_title() {
-  local number=$1 title=$2
-  if is_single_line "${title}" && [[ ${title} =~ ${rule} ]]; then
-    summary "pull request #${number}: $(code_span "${title}")"
+  local number=$1 title=$2 span
+  if [[ ${title} != *[$'\n\r']* && ${title} =~ ${rule} ]]; then
+    span=$(code_span "${title}")
+    summary "pull request #${number}: ${span}"
   else
     problem "pull request #${number}: the title \"${title}\" does not follow Conventional Commits, <type>[(<scope>)][!]: <description> with a type of: ${TYPES}"
   fi
@@ -44,16 +40,17 @@ check_title() {
 
 # check_pull_request NUMBER: check the title of pull request NUMBER.
 check_pull_request() {
-  local number=$1 pull
+  local number=$1 pull title
   [[ ${number} =~ ${NUMBER_FORM} ]] || fail "not a pull request number: ${number}"
   pull=$(api_get "repos/${REPO}/pulls/${number}") || fail "cannot read pull request #${number}"
-  check_title "${number}" "$(jq -r .title <<<"${pull}")"
+  title=$(jq -r .title <<<"${pull}")
+  check_title "${number}" "${title}"
 }
 
 # check_branch: check the titles of the open pull requests of BRANCH;
 # transient errors of the API are retried.
 check_branch() {
-  local head pulls pull
+  local head pulls pull number title
   head=$(jq -rn --arg head "${OWNER}:${BRANCH}" '$head | @uri')
   pulls=$(api_request GET "repos/${REPO}/pulls?state=open&head=${head}&per_page=100" \
     --paginate --jq '.[] | {number, title} | @json') || fail "cannot list the pull requests of ${BRANCH}"
@@ -62,7 +59,9 @@ check_branch() {
     return 0
   fi
   while IFS= read -r pull; do
-    check_title "$(jq -r .number <<<"${pull}")" "$(jq -r .title <<<"${pull}")"
+    number=$(jq -r .number <<<"${pull}")
+    title=$(jq -r .title <<<"${pull}")
+    check_title "${number}" "${title}"
   done <<<"${pulls}"
 }
 

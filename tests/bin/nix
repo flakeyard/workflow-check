@@ -21,7 +21,8 @@ stub_error() {
   exit 2
 }
 
-# locked ARG...: the arguments keep flake.lock as it is, and it is up to date.
+# locked ARG...: exit unless the arguments keep flake.lock as it is, and it is
+# up to date.
 locked() {
   [[ " $* " == *" ${NO_LOCK_UPDATE} "* ]] || stub_error "$1 without ${NO_LOCK_UPDATE}: $*"
   [[ " $* " == *" ${NO_LOCK_UPDATE} ${NIX_OVERRIDES:-}${NIX_OVERRIDES:+ }"* ]] \
@@ -37,9 +38,9 @@ check_name() {
   printf '%s\n' "${name%\"}"
 }
 
-# failed NAME: the check NAME fails to build.
-failed() {
-  [[ " ${NIX_FAILED:-} " == *" $1 "* ]]
+# exit_if_failed NAME: exit 1, as Nix does, when the check NAME fails to build.
+exit_if_failed() {
+  if [[ " ${NIX_FAILED:-} " == *" $1 "* ]]; then exit 1; fi
 }
 
 # applied ARG...: the expression after --apply.
@@ -76,18 +77,34 @@ check_flake() {
 
 # build ARG...: build the installables among ARG.
 build() {
-  local arg
+  local arg name
   echo "nix $*" >>"${CALLS}"
   for arg; do
-    if [[ ${arg} == *#* ]] && failed "$(check_name "${arg}")"; then exit 1; fi
+    [[ ${arg} == *#* ]] || continue
+    name=$(check_name "${arg}")
+    exit_if_failed "${name}"
   done
 }
 
 case "$1 ${2:-}" in
   "config show") printf '%s\n' "${NIX_SYSTEM}" ;;
-  "eval "*) locked "$@" && evaluate "$(applied "$@")" ;;
-  "flake check") locked "$@" && check_flake ;;
-  "build "*) locked "$@" && build "$@" ;;
-  "path-info "*) locked "$@" && ! failed "$(check_name "${@: -1}")" ;;
+  "eval "*)
+    locked "$@"
+    expression=$(applied "$@")
+    evaluate "${expression}"
+    ;;
+  "flake check")
+    locked "$@"
+    check_flake
+    ;;
+  "build "*)
+    locked "$@"
+    build "$@"
+    ;;
+  "path-info "*)
+    locked "$@"
+    name=$(check_name "${@: -1}")
+    exit_if_failed "${name}"
+    ;;
   *) stub_error "unsupported: $*" ;;
 esac

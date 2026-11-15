@@ -46,7 +46,7 @@ done
 inputs_setup . '["github.com/a/b\n::warning::forged"]'
 run_step "flake-lock-inputs: rejects a source that would forge a command" fail "${ACTIONS}/${step}" "${step}"
 expect warnings 0
-[[ ! -s ${work}/output ]] || report "unexpected outputs: $(cat "${work}/output")"
+[[ ! -s ${work}/output ]] || report "unexpected outputs: $(<"${work}/output")"
 finish
 
 inputs_setup ./dev '["github.com/nixos/nixpkgs"]'

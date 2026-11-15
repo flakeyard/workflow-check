@@ -49,13 +49,16 @@ dir_of() {
 # list_dir DIR: add the entries of the directory DIR, ROOT_DIR for the root,
 # to found; a directory that does not exist has none.
 list_dir() {
-  local dir=$1 listing name status=0
+  local dir=$1 listing names name status=0
+  # shellcheck disable=SC2310 # directory_at returns its status itself, NOT_FOUND included.
   listing=$(directory_at "${dir}" "${SHA}") || status=$?
   ((status != NOT_FOUND)) || return 0
   ((status == 0)) || fail "cannot list ${dir:-the root} at ${SHA}"
+  names=$(jq -r '.[].name' <<<"${listing}")
   while IFS= read -r name; do
+    [[ -n ${name} ]] || continue
     found[${dir:+${dir}/}${name}]=1
-  done < <(jq -r '.[].name' <<<"${listing}")
+  done <<<"${names}"
 }
 
 # check_paths: list the directory of every path once, and report each path

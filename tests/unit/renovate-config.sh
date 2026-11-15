@@ -103,6 +103,14 @@ file_fixture "${REPO}" package.json "${SHA}" '{"name":"x"}'
 run_step "renovate-config: package.json without a configuration" ok "${ACTIONS}/${step}" "${step}"
 finish
 
+# An error of the API reading package.json fails instead of passing it.
+renovate_setup "${FLAKEYARD_CONFIG}"
+other_setup package.json
+fixture "repos/${REPO}/contents/package.json?ref=${SHA}" "HTTP 500"
+run_step "renovate-config: an API error reading package.json fails" fail "${ACTIONS}/${step}" "${step}"
+expect message "cannot read package.json at ${SHA}"
+finish
+
 # The requests are an independent oracle: one listing of the root, one of
 # each directory of other configurations that exists, and renovate.json.
 renovate_setup "${FLAKEYARD_CONFIG}"

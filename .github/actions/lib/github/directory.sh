@@ -29,8 +29,9 @@ directory_path() {
 # it on stderr. The API lists at most 1,000 entries of a directory; a larger
 # one would need the Git trees API.
 directory_at() {
-  local dir=$1 ref=$2 body status=0
-  body=$(api_request GET "$(directory_path "${dir}" "${ref}")") || status=$?
+  local dir=$1 ref=$2 api_path body status=0
+  api_path=$(directory_path "${dir}" "${ref}") || return 1
+  body=$(api_request GET "${api_path}") || status=$?
   ((status == 0)) || return "${status}"
   jq -ce 'arrays | map({name, type})' <<<"${body}" 2>/dev/null || {
     printf '%s: not a directory\n' "${dir:-the root}" >&2

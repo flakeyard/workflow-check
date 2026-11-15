@@ -45,5 +45,7 @@ write_lines() {
 }
 
 check_inputs
-printf 'path=%s\n' "$(lock_path)" >>"${GITHUB_OUTPUT}"
-write_lines allow-duplicates "$(jq -r '.[]' <<<"${ALLOW_DUPLICATES}")"
+path=$(lock_path)
+printf 'path=%s\n' "${path}" >>"${GITHUB_OUTPUT}"
+allowed=$(jq -r '.[]' <<<"${ALLOW_DUPLICATES}")
+write_lines allow-duplicates "${allowed}"
