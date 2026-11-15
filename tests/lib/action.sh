@@ -27,7 +27,11 @@ trap 'rm -rf -- "$shared"' EXIT
 sysbin=${shared}/bin
 mkdir "${sysbin}"
 for tool in "${RUNNER_TOOLS[@]}"; do
-  ln -s "$(command -v "${tool}")" "${sysbin}/${tool}"
+  tool_path=$(command -v "${tool}") || {
+    echo "tests: no ${tool} on PATH" >&2
+    exit 2
+  }
+  ln -s "${tool_path}" "${sysbin}/${tool}"
 done
 
 # The copy of the library that the steps run, whose SYSTEM_PATH is the stubs
@@ -82,18 +86,21 @@ expect_lines() {
 # REPO at SHA, "" for the root, with ENTRY..., each a file, or a directory
 # when it ends with "/".
 listing_fixture() {
-  local dir=$1
+  local dir=$1 listing
   shift
-  fixture "repos/${REPO}/contents${dir:+/${dir}}?ref=${SHA}" "$(jq -nc '$ARGS.positional
+  listing=$(jq -nc '$ARGS.positional
     | map(if endswith("/") then {name: rtrimstr("/"), type: "dir"} else {name: ., type: "file"} end)' \
-    --args -- "$@")"
+    --args -- "$@")
+  fixture "repos/${REPO}/contents${dir:+/${dir}}?ref=${SHA}" "${listing}"
 }
 
 # expect_calls COUNT: the last run made COUNT requests of the gh stub; GETs
 # count only when LOG_GETS is applied.
 expect_calls() {
-  local expected=$1 count
+  local expected=$1 count calls
   [[ -n ${current} ]] || return 0
   count=$(wc -l <"${work}/calls")
-  [[ ${count} == "${expected}" ]] || report "${count} calls, expected ${expected}: $(paste -sd';' "${work}/calls")"
+  [[ ${count} != "${expected}" ]] || return 0
+  calls=$(paste -sd';' "${work}/calls")
+  report "${count} calls, expected ${expected}: ${calls}"
 }

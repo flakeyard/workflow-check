@@ -75,7 +75,9 @@ finish
 for enabled in false ""; do
   action_setup
   apply ENABLED="${enabled}"
-  run_step "tool-configs: off with '${enabled}'" "$([[ -n ${enabled} ]] && echo ok || echo fail)" "${ACTIONS}/${step}" "${step}"
+  expected=fail
+  [[ -z ${enabled} ]] || expected=ok
+  run_step "tool-configs: off with '${enabled}'" "${expected}" "${ACTIONS}/${step}" "${step}"
   [[ -z ${enabled} ]] || expect message "::notice::the check of configuration files of atom tools is off"
   [[ -z ${enabled} ]] || expect_calls 0
   finish

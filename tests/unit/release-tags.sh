@@ -41,7 +41,8 @@ finish
 for preset in "github>flakeyard/renovate-config" "github>flakeyard/renovate-config#v1" \
   "github>flakeyard/renovate-config#main" "github>flakeyard/renovate-config#v1.2.3-rc.1" \
   "github>flakeyard/renovate-config#v0.1.0/../../x"; do
-  tags_setup "$(jq -n --arg preset "${preset}" '{extends: [$preset]}')"
+  config=$(jq -n --arg preset "${preset}" '{extends: [$preset]}')
+  tags_setup "${config}"
   run_step "release-tags: rejects ${preset}" fail "${ACTIONS}/${step}" "${step}"
   expect message "not pinned to a release tag vX.Y.Z"
   expect no-calls
@@ -49,7 +50,8 @@ for preset in "github>flakeyard/renovate-config" "github>flakeyard/renovate-conf
 done
 
 for preset in "local>flakeyard/renovate-config" "gitlab>a/b#v1.0.0" "https://example.org/p.json" "@acme/renovate-config"; do
-  tags_setup "$(jq -n --arg preset "${preset}" '{extends: [$preset]}')"
+  config=$(jq -n --arg preset "${preset}" '{extends: [$preset]}')
+  tags_setup "${config}"
   run_step "release-tags: rejects ${preset}" fail "${ACTIONS}/${step}" "${step}"
   finish
 done
@@ -61,7 +63,8 @@ finish
 
 # A repository name of dots only would change the path of the API call.
 for repository in "owner/.." "owner/."; do
-  tags_setup "$(jq -n --arg preset "github>${repository}#v1.0.0" '{extends: [$preset]}')"
+  config=$(jq -n --arg preset "github>${repository}#v1.0.0" '{extends: [$preset]}')
+  tags_setup "${config}"
   run_step "release-tags: rejects the preset of ${repository}" fail "${ACTIONS}/${step}" "${step}"
   expect message "not a GitHub repository: ${repository}"
   finish
@@ -152,7 +155,8 @@ finish
 
 # More presets that fail than annotations of a kind: the last one counts the
 # rest.
-tags_setup "$(jq -n '{extends: [range(12) | "github>o/p\(.)"]}')"
+config=$(jq -n '{extends: [range(12) | "github>o/p\(.)"]}')
+tags_setup "${config}"
 run_step "release-tags: the errors beyond the annotations of a step are counted" fail "${ACTIONS}/${step}" "${step}"
 expect message "github>o/p8: not pinned"
 expect no-message "github>o/p9: not pinned"

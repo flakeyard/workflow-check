@@ -19,6 +19,7 @@ if [[ ${ENABLED} != true ]]; then
 elif [[ -z ${FLAKE} ]]; then
   notice "no flake; no flake.lock to check"
 else
-  summary "flake.lock of $(code_span "${FLAKE}"): checked in the flake jobs"
+  flake_span=$(code_span "${FLAKE}")
+  summary "flake.lock of ${flake_span}: checked in the flake jobs"
   [[ ${NIXPKGS_EOL} == true ]] || notice "the end-of-life check of nixpkgs is off"
 fi

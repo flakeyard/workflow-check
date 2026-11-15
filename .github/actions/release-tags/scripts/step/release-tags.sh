@@ -37,15 +37,10 @@ check_allow_input() {
   is_repository_list "${ALLOW_UNPINNED}" || fail "allow-unpinned is not a JSON array of owner/repo"
 }
 
-# is_allowed REPOSITORY: REPOSITORY is in ALLOW_UNPINNED, without case.
-is_allowed() {
-  lists_repository "${ALLOW_UNPINNED}" "$1"
-}
-
 # check_release WHAT REPOSITORY TAG: the release TAG of REPOSITORY exists and
 # is immutable.
 check_release() {
-  local what=$1 repository=$2 tag=$3 release status=0
+  local what=$1 repository=$2 tag=$3 release status=0 what_span tag_span
   release=$(api_request GET "repos/${repository}/releases/tags/${tag}" 2>/dev/null) || status=$?
   if ((status == NOT_FOUND)); then
     problem "${what}: ${repository} has no release ${tag} that GITHUB_TOKEN can read"
@@ -54,17 +49,19 @@ check_release() {
   elif ! jq -e '.immutable == true' <<<"${release}" >/dev/null; then
     problem "${what}: the release ${tag} of ${repository} is not immutable"
   else
-    summary "| $(code_span "${what}") | $(code_span "${repository} ${tag}") |"
+    what_span=$(code_span "${what}")
+    tag_span=$(code_span "${repository} ${tag}")
+    summary "| ${what_span} | ${tag_span} |"
   fi
 }
 
 # check_reference WHAT REPOSITORY TAG: WHAT, from REPOSITORY, is pinned to an
-# immutable release TAG, unless REPOSITORY is allowed to be unpinned.
+# immutable release TAG, unless ALLOW_UNPINNED lists REPOSITORY, without case.
 check_reference() {
   local what=$1 repository=$2 tag=$3
   if [[ ! ${repository} =~ ${REPOSITORY_FORM} ]]; then
     problem "${what}: not a GitHub repository: ${repository}"
-  elif is_allowed "${repository}"; then
+  elif lists_repository "${ALLOW_UNPINNED}" "${repository}"; then
     notice "${what}: ${repository} may be unpinned"
   elif [[ ! ${tag} =~ ${RELEASE_TAG} ]]; then
     problem "${what}: not pinned to a release tag vX.Y.Z"
@@ -73,16 +70,19 @@ check_reference() {
   fi
 }
 
-# check_preset PRESET: a preset of renovate.json is pinned.
+# check_preset PRESET: a preset of renovate.json is pinned. Presets of
+# repositories that ALLOW_UNPINNED lists may come from other hosts.
+# shellcheck disable=SC2310 # is_builtin_preset, preset_source and is_github_preset only test the text of PRESET.
 check_preset() {
-  local preset=$1 what="preset $1" repository
+  local preset=$1 what="preset $1" repository tag
   is_builtin_preset "${preset}" && return 0
   if ! repository=$(preset_source "${preset}"); then
     problem "${what}: not a preset of a repository"
-  elif ! is_github_preset "${preset}" && ! is_allowed "${repository}"; then
+  elif ! is_github_preset "${preset}" && ! lists_repository "${ALLOW_UNPINNED}" "${repository}"; then
     problem "${what}: only presets of GitHub repositories, github>owner/repo#vX.Y.Z, can be pinned to a release"
   else
-    check_reference "${what}" "${repository}" "$(preset_tag "${preset}")"
+    tag=$(preset_tag "${preset}")
+    check_reference "${what}" "${repository}" "${tag}"
   fi
 }
 
@@ -92,15 +92,19 @@ readonly EXTENDS='[.. | objects | .extends? // empty]'
 # check_presets: every preset of renovate.json is pinned; nothing to check
 # without renovate.json.
 check_presets() {
-  local config status=0 preset
+  local config status=0 preset presets count
   config=$(file_at "${CONFIG}" "${SHA}" 2>/dev/null) || status=$?
   ((status != NOT_FOUND)) || return 0
   ((status == 0)) || fail "cannot read ${CONFIG} at ${SHA}"
   jq -e "${PRESET_LIST_DEF} ${EXTENDS} | all(preset_list)" <<<"${config}" >/dev/null 2>&1 \
     || fail "${CONFIG} is not JSON whose extends are arrays of one-line strings"
+  presets=$(jq -r "${EXTENDS}"' | .[][]' <<<"${config}")
+  # A preset may be empty, so the count tells no presets from one empty one.
+  count=$(jq "${EXTENDS}"' | [.[][]] | length' <<<"${config}")
+  ((count > 0)) || return 0
   while IFS= read -r preset; do
     check_preset "${preset}"
-  done < <(jq -r "${EXTENDS}"' | .[][]' <<<"${config}")
+  done <<<"${presets}"
 }
 
 # answer KEY ANSWERS: print the value of KEY in the Copier answers ANSWERS.
@@ -117,11 +121,13 @@ answer() {
 
 # check_template FILE: the template of the Copier answers FILE is pinned.
 check_template() {
-  local file=$1 what="template of $1" answers source
+  local file=$1 what="template of $1" answers source commit repository
   answers=$(file_at "${file}" "${SHA}") || fail "cannot read ${file} at ${SHA}"
   source=$(answer _src_path "${answers}")
   if [[ ${source} =~ ${GITHUB_TEMPLATE} ]]; then
-    check_reference "${what}" "${BASH_REMATCH[2]%.git}" "$(answer _commit "${answers}")"
+    repository=${BASH_REMATCH[2]%.git}
+    commit=$(answer _commit "${answers}")
+    check_reference "${what}" "${repository}" "${commit}"
   else
     problem "${what}: not a template on GitHub: ${source}"
   fi
@@ -131,12 +137,14 @@ check_template() {
 # line.
 root_files() {
   local listing
+  # shellcheck disable=SC2310 # directory_at returns its failure itself; this returns it on.
   listing=$(directory_at "${ROOT_DIR}" "${SHA}") || return 1
   jq -r '.[] | select(.type == "file") | .name' <<<"${listing}"
 }
 
 check_templates() {
   local files file
+  # shellcheck disable=SC2310 # root_files returns 1 on every failure itself.
   files=$(root_files) || fail "cannot list the files of ${REPO} at ${SHA}"
   while IFS= read -r file; do
     [[ ! ${file} =~ ${ANSWERS_FILE} ]] || check_template "${file}"

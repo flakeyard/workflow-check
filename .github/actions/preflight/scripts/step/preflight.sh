@@ -15,4 +15,5 @@ readonly SUPPORTED_EVENTS='^(pull_request|push|schedule|workflow_dispatch)$'
 
 [[ ${EVENT} =~ ${SUPPORTED_EVENTS} ]] \
   || fail "the check workflow runs on pull_request, push, schedule and workflow_dispatch, not ${EVENT}"
-summary "event: $(code_span "${EVENT}")"
+event_span=$(code_span "${EVENT}")
+summary "event: ${event_span}"

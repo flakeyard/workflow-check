@@ -17,4 +17,5 @@ readonly DESCRIPTION='GitHub Actions run'
 gh api --silent -X POST "repos/${REPO}/statuses/${SHA}" \
   -f state="${STATE}" -f context="${CONTEXT}" -f target_url="${RUN_URL}" \
   -f description="${DESCRIPTION}"
-summary "posted ${STATE} as $(code_span "${CONTEXT}") on ${SHA}"
+context_span=$(code_span "${CONTEXT}")
+summary "posted ${STATE} as ${context_span} on ${SHA}"

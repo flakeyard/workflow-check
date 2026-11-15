@@ -22,10 +22,12 @@ check_needs() {
 
 # required_setup: a pull request run whose jobs all succeeded.
 required_setup() {
+  local check
+  check=$(check_needs success)
   action_setup
   apply RUN_ID=7 RUN_ATTEMPT=2 CHECK_RUN_ID=99 \
     CALLER='{"install":{"result":"success","outputs":{}}}' \
-    CHECK="$(check_needs success)" \
+    CHECK="${check}" \
     CALLER_MAY_SKIP='[]' CHECK_MAY_SKIP='{"pending":true,"flake":true}'
   fixture "repos/${REPO}/actions/jobs/99" '{"name":"check / required"}'
   fixture "${attempt_path}" "${ATTEMPT_DONE}"
@@ -75,7 +77,8 @@ run_step "required: a caller job may be skipped" ok "${ACTIONS}/${step}" "${step
 finish
 
 required_setup
-apply CHECK="$(check_needs skipped)"
+check=$(check_needs skipped)
+apply CHECK="${check}"
 run_step "required: a skipped job of this workflow fails unless it may be skipped" fail "${ACTIONS}/${step}" "${step}"
 expect message "check.meta: skipped"
 finish
@@ -88,7 +91,8 @@ finish
 
 required_setup
 apply CALLER='{"meta":{"result":"failure","outputs":{}}}' CALLER_MAY_SKIP='["meta"]'
-apply CHECK="$(check_needs success)"
+check=$(check_needs success)
+apply CHECK="${check}"
 run_step "required: caller and own jobs of one id are told apart" fail "${ACTIONS}/${step}" "${step}"
 expect message "caller.meta: failure"
 expect no-message "check.meta: success,"

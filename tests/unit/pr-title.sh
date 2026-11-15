@@ -7,9 +7,11 @@ branch_pulls="repos/o/r/pulls?state=open&head=o%3Arelease-please--branches--main
 
 # title_setup TITLE: a pull_request run of pull request 5 with TITLE.
 title_setup() {
+  local pull
   action_setup
   apply EVENT=pull_request NUMBER=5 ENABLED=true TYPES="${DEFAULT_TYPES}"
-  fixture "repos/${REPO}/pulls/5" "$(jq -n --arg title "$1" '{number: 5, title: $title}')"
+  pull=$(jq -n --arg title "$1" '{number: 5, title: $title}')
+  fixture "repos/${REPO}/pulls/5" "${pull}"
 }
 
 # Titles that follow the rule.
@@ -99,7 +101,8 @@ expect summary "pull request #7"
 finish
 
 # More bad titles than annotations of a kind: the last one counts the rest.
-dispatch_setup "$(jq -n '[range(1; 12) | {number: ., title: "bad"}]')"
+pulls=$(jq -n '[range(1; 12) | {number: ., title: "bad"}]')
+dispatch_setup "${pulls}"
 run_step "pr-title: the errors beyond the annotations of a step are counted" fail "${ACTIONS}/${step}" "${step}"
 expect message "pull request #9: the title"
 expect no-message "pull request #10: the title"

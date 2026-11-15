@@ -5,10 +5,11 @@ step=context
 
 # context_case NAME JOB_NAME CONTEXT: the job named JOB_NAME gets CONTEXT.
 context_case() {
-  local name=$1 job_name=$2 context=$3
+  local name=$1 job_name=$2 context=$3 job
   action_setup
   apply CHECK_RUN_ID=125414394526
-  fixture "repos/${REPO}/actions/jobs/125414394526" "$(jq -n --arg name "${job_name}" '{name: $name}')"
+  job=$(jq -n --arg name "${job_name}" '{name: $name}')
+  fixture "repos/${REPO}/actions/jobs/125414394526" "${job}"
   run_step "context: ${name}" ok "${ACTIONS}/${step}" "${step}"
   expect output context "${context}"
   finish

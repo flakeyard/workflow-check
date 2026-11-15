@@ -19,7 +19,9 @@ source "${SHELL_LIB}/report.sh"
 
 readonly REQUIRED_JOB=required
 
+# shellcheck disable=SC2310 # job_name returns 1 on every failure itself.
 name=$(job_name "${CHECK_RUN_ID}") || fail "cannot read the name of job ${CHECK_RUN_ID}"
 context=$(caller_prefix "${name}")${REQUIRED_JOB}
 printf 'context=%s\n' "${context}" >>"${GITHUB_OUTPUT}"
-summary "status context: $(code_span "${context}")"
+context_span=$(code_span "${context}")
+summary "status context: ${context_span}"

@@ -24,33 +24,23 @@ source "${SHELL_LIB}/report.sh"
 # shellcheck disable=SC2016 # The expression is the text the caller writes.
 readonly NEEDS_HINT='pass needs: ${{ toJSON(needs) }} in the call'
 
-# is_needs JSON: JSON is a needs context, an object of jobs with a result.
-is_needs() {
-  jq -e 'type == "object" and all(.[]; type == "object" and (.result | type) == "string")' \
-    <<<"$1" >/dev/null 2>&1
-}
-
-# is_id_list JSON: JSON is an array of job ids.
-is_id_list() {
-  jq -e 'type == "array" and all(.[]; type == "string")' <<<"$1" >/dev/null 2>&1
-}
-
-# is_skip_map JSON: JSON is an object of job ids and booleans.
-is_skip_map() {
-  jq -e 'type == "object" and all(.[]; type == "boolean")' <<<"$1" >/dev/null 2>&1
-}
+# jq filters, true for a needs context, an object of jobs with a result; for
+# an array of job ids; and for an object of job ids and booleans.
+readonly NEEDS='type == "object" and all(.[]; type == "object" and (.result | type) == "string")'
+readonly ID_LIST='type == "array" and all(.[]; type == "string")'
+readonly SKIP_MAP='type == "object" and all(.[]; type == "boolean")'
 
 check_inputs() {
-  is_needs "${CALLER}" || fail "the input needs is missing or malformed; ${NEEDS_HINT}"
-  is_needs "${CHECK}" || fail "the needs of the job required are malformed"
-  is_id_list "${CALLER_MAY_SKIP}" || fail "caller-may-skip is not a JSON array of job ids"
-  is_skip_map "${CHECK_MAY_SKIP}" || fail "check-may-skip is not a JSON object of booleans"
-  is_skip_map_of "${CHECK}" || fail "check-may-skip names jobs that are not in the needs of the job required"
-}
-
-# is_skip_map_of NEEDS: CHECK_MAY_SKIP names only jobs of NEEDS.
-is_skip_map_of() {
-  jq -e --argjson needs "$1" 'keys - ($needs | keys) == []' <<<"${CHECK_MAY_SKIP}" >/dev/null
+  jq -e "${NEEDS}" <<<"${CALLER}" >/dev/null 2>&1 \
+    || fail "the input needs is missing or malformed; ${NEEDS_HINT}"
+  jq -e "${NEEDS}" <<<"${CHECK}" >/dev/null 2>&1 || fail "the needs of the job required are malformed"
+  jq -e "${ID_LIST}" <<<"${CALLER_MAY_SKIP}" >/dev/null 2>&1 \
+    || fail "caller-may-skip is not a JSON array of job ids"
+  jq -e "${SKIP_MAP}" <<<"${CHECK_MAY_SKIP}" >/dev/null 2>&1 \
+    || fail "check-may-skip is not a JSON object of booleans"
+  # CHECK_MAY_SKIP names only jobs of CHECK.
+  jq -e --argjson needs "${CHECK}" 'keys - ($needs | keys) == []' <<<"${CHECK_MAY_SKIP}" >/dev/null \
+    || fail "check-may-skip names jobs that are not in the needs of the job required"
 }
 
 # verdict OWN PREFIX JOBS: print the entries of verdict.jq.
@@ -65,18 +55,24 @@ verdict() {
 
 # summary_table ENTRIES: write the entries to the job summary.
 summary_table() {
-  local entries=$1 name result
+  local entries=$1 rows name result
   summary "| Job | Result |"
   summary "| --- | --- |"
+  rows=$(jq -r '.[] | [.name, .result] | @tsv' <<<"${entries}")
   while IFS=$'\t' read -r name result; do
-    summary "| $(code_span "${name}") | $(code_span "${result}") |"
-  done < <(jq -r '.[] | [.name, .result] | @tsv' <<<"${entries}")
+    [[ -n ${name} ]] || continue
+    name=$(code_span "${name}")
+    result=$(code_span "${result}")
+    summary "| ${name} | ${result} |"
+  done <<<"${rows}"
 }
 
 check_inputs
+# shellcheck disable=SC2310 # job_name returns 1 on every failure itself.
 own=$(job_name "${CHECK_RUN_ID}") || fail "cannot read the name of job ${CHECK_RUN_ID}"
 prefix=$(caller_prefix "${own}")
 [[ -n ${prefix} ]] || fail "job ${own} does not run in a called workflow"
+# shellcheck disable=SC2310 # attempt_jobs returns 1 on every failure itself.
 jobs=$(attempt_jobs "${RUN_ID}" "${RUN_ATTEMPT}") \
   || fail "cannot read the jobs of attempt ${RUN_ATTEMPT} of run ${RUN_ID}"
 entries=$(verdict "${own}" "${prefix}" "${jobs}")
