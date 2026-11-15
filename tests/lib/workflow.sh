@@ -46,5 +46,5 @@ readonly REPOSITORY_DEFS='
 # $own_or_pinned, is true.
 repository_check() {
   local json=$1 name=$2 filter=$3
-  workflow_check "$json" "$name" "$REPOSITORY_DEFS $filter" --arg own_or_pinned "$OWN_OR_PINNED"
+  workflow_check "${json}" "${name}" "${REPOSITORY_DEFS} ${filter}" --arg own_or_pinned "${OWN_OR_PINNED}"
 }

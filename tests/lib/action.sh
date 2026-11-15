@@ -19,21 +19,21 @@ readonly WIDE_LOCALE=en_US.UTF-8
 # SYSTEM_PATH. Not nix: flake-checks runs the nix of the PATH of the job.
 readonly RUNNER_TOOLS=(base64 bash cat env grep jq mktemp rm sed touch)
 # The directory of the internal actions, ACTIONS/<name>/action.yml.
-readonly ACTIONS=$root/.github/actions
+readonly ACTIONS=${root}/.github/actions
 
 # Files shared by all tests, removed at the end.
 shared=$(mktemp -d)
 trap 'rm -rf -- "$shared"' EXIT
-sysbin=$shared/bin
-mkdir "$sysbin"
+sysbin=${shared}/bin
+mkdir "${sysbin}"
 for tool in "${RUNNER_TOOLS[@]}"; do
-  ln -s "$(command -v "$tool")" "$sysbin/$tool"
+  ln -s "$(command -v "${tool}")" "${sysbin}/${tool}"
 done
 
 # The copy of the library that the steps run, whose SYSTEM_PATH is the stubs
 # of the library and the tools of the runner.
-shell_lib=$shared/shell-lib
-copy_library "$shell_lib" "$TESTING_BIN:$sysbin"
+shell_lib=${shared}/shell-lib
+copy_library "${shell_lib}" "${TESTING_BIN}:${sysbin}"
 readonly shell_lib
 # The variables of the stub of nix, which every step gets besides the
 # variables of its run line and of the stubs of the library.
@@ -43,39 +43,39 @@ stub_variables=(NIX_SYSTEM NIX_STALE_LOCK NIX_EVAL_ERROR NIX_DECLARED NIX_CHECKS
 # the repository and the commit.
 action_setup() {
   setup
-  apply SHELL_LIB="$shell_lib" REPO="$REPO" SHA="$SHA"
+  apply SHELL_LIB="${shell_lib}" REPO="${REPO}" SHA="${SHA}"
 }
 
 # has_wide_ranges: the system has WIDE_LOCALE, and [a-z] matches é in it.
 has_wide_ranges() {
-  LC_ALL=$WIDE_LOCALE bash -c '[[ é =~ ^[a-z]$ ]]' 2>/dev/null
+  LC_ALL=${WIDE_LOCALE} bash -c '[[ é =~ ^[a-z]$ ]]' 2>/dev/null
 }
 
 # apply_wide_locale: run the script under test in WIDE_LOCALE, with the
 # locales of the tests when they come from LOCALE_ARCHIVE.
 apply_wide_locale() {
-  apply LC_ALL="$WIDE_LOCALE"
-  [[ -z ${LOCALE_ARCHIVE-} ]] || apply LOCALE_ARCHIVE="$LOCALE_ARCHIVE"
+  apply LC_ALL="${WIDE_LOCALE}"
+  [[ -z ${LOCALE_ARCHIVE-} ]] || apply LOCALE_ARCHIVE="${LOCALE_ARCHIVE}"
 }
 
 # multiline_output NAME: print the lines of the output NAME, written as
 # NAME<<DELIMITER, the lines and DELIMITER.
 multiline_output() {
   local name=$1
-  awk -v start="$name<<" '
+  awk -v start="${name}<<" '
     delimiter != "" && $0 == delimiter { delimiter = ""; next }
     delimiter != "" { print }
     index($0, start) == 1 { delimiter = substr($0, length(start) + 1) }
-  ' "$work/output"
+  ' "${work}/output"
 }
 
 # expect_lines NAME VALUE: the output NAME of several lines of the last run is
 # VALUE.
 expect_lines() {
   local name=$1 expected=$2 lines
-  [[ -n $current ]] || return 0
-  lines=$(multiline_output "$name")
-  [[ $lines == "$expected" ]] || report "output $name is '$lines', expected '$expected'"
+  [[ -n ${current} ]] || return 0
+  lines=$(multiline_output "${name}")
+  [[ ${lines} == "${expected}" ]] || report "output ${name} is '${lines}', expected '${expected}'"
 }
 
 # listing_fixture DIR ENTRY...: answer the listing of the directory DIR of
@@ -84,7 +84,7 @@ expect_lines() {
 listing_fixture() {
   local dir=$1
   shift
-  fixture "repos/$REPO/contents${dir:+/$dir}?ref=$SHA" "$(jq -nc '$ARGS.positional
+  fixture "repos/${REPO}/contents${dir:+/${dir}}?ref=${SHA}" "$(jq -nc '$ARGS.positional
     | map(if endswith("/") then {name: rtrimstr("/"), type: "dir"} else {name: ., type: "file"} end)' \
     --args -- "$@")"
 }
@@ -93,7 +93,7 @@ listing_fixture() {
 # count only when LOG_GETS is applied.
 expect_calls() {
   local expected=$1 count
-  [[ -n $current ]] || return 0
-  count=$(wc -l <"$work/calls")
-  [[ $count == "$expected" ]] || report "$count calls, expected $expected: $(paste -sd';' "$work/calls")"
+  [[ -n ${current} ]] || return 0
+  count=$(wc -l <"${work}/calls")
+  [[ ${count} == "${expected}" ]] || report "${count} calls, expected ${expected}: $(paste -sd';' "${work}/calls")"
 }

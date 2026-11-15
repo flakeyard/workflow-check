@@ -12,14 +12,14 @@ set -euo pipefail
 : "${CALLER?}" "${CHECK:?}" "${CALLER_MAY_SKIP:?}" "${CHECK_MAY_SKIP:?}"
 # The tools of the runner, LC_ALL=C and inherit_errexit.
 # shellcheck source=/dev/null
-source "$SHELL_LIB/env.sh"
+source "${SHELL_LIB}/env.sh"
 step_environment
 # From $0, which no variable of the job can set (ADR-0004).
 lib=${0%/*}/../../../lib
 # shellcheck source=../../../lib/github/jobs.sh
-source "$lib/github/jobs.sh"
+source "${lib}/github/jobs.sh"
 # shellcheck source=/dev/null
-source "$SHELL_LIB/report.sh"
+source "${SHELL_LIB}/report.sh"
 
 # shellcheck disable=SC2016 # The expression is the text the caller writes.
 readonly NEEDS_HINT='pass needs: ${{ toJSON(needs) }} in the call'
@@ -41,25 +41,25 @@ is_skip_map() {
 }
 
 check_inputs() {
-  is_needs "$CALLER" || fail "the input needs is missing or malformed; $NEEDS_HINT"
-  is_needs "$CHECK" || fail "the needs of the job required are malformed"
-  is_id_list "$CALLER_MAY_SKIP" || fail "caller-may-skip is not a JSON array of job ids"
-  is_skip_map "$CHECK_MAY_SKIP" || fail "check-may-skip is not a JSON object of booleans"
-  is_skip_map_of "$CHECK" || fail "check-may-skip names jobs that are not in the needs of the job required"
+  is_needs "${CALLER}" || fail "the input needs is missing or malformed; ${NEEDS_HINT}"
+  is_needs "${CHECK}" || fail "the needs of the job required are malformed"
+  is_id_list "${CALLER_MAY_SKIP}" || fail "caller-may-skip is not a JSON array of job ids"
+  is_skip_map "${CHECK_MAY_SKIP}" || fail "check-may-skip is not a JSON object of booleans"
+  is_skip_map_of "${CHECK}" || fail "check-may-skip names jobs that are not in the needs of the job required"
 }
 
 # is_skip_map_of NEEDS: CHECK_MAY_SKIP names only jobs of NEEDS.
 is_skip_map_of() {
-  jq -e --argjson needs "$1" 'keys - ($needs | keys) == []' <<<"$CHECK_MAY_SKIP" >/dev/null
+  jq -e --argjson needs "$1" 'keys - ($needs | keys) == []' <<<"${CHECK_MAY_SKIP}" >/dev/null
 }
 
 # verdict OWN PREFIX JOBS: print the entries of verdict.jq.
 verdict() {
   local own=$1 prefix=$2 jobs=$3
-  jq -n --argjson caller "$CALLER" --argjson check "$CHECK" \
-    --argjson caller_may_skip "$CALLER_MAY_SKIP" \
-    --argjson check_may_skip "$CHECK_MAY_SKIP" \
-    --argjson jobs "$jobs" --arg own "$own" --arg prefix "$prefix" \
+  jq -n --argjson caller "${CALLER}" --argjson check "${CHECK}" \
+    --argjson caller_may_skip "${CALLER_MAY_SKIP}" \
+    --argjson check_may_skip "${CHECK_MAY_SKIP}" \
+    --argjson jobs "${jobs}" --arg own "${own}" --arg prefix "${prefix}" \
     -f "${0%/*}/../../verdict.jq"
 }
 
@@ -69,17 +69,17 @@ summary_table() {
   summary "| Job | Result |"
   summary "| --- | --- |"
   while IFS=$'\t' read -r name result; do
-    summary "| $(code_span "$name") | $(code_span "$result") |"
-  done < <(jq -r '.[] | [.name, .result] | @tsv' <<<"$entries")
+    summary "| $(code_span "${name}") | $(code_span "${result}") |"
+  done < <(jq -r '.[] | [.name, .result] | @tsv' <<<"${entries}")
 }
 
 check_inputs
-own=$(job_name "$CHECK_RUN_ID") || fail "cannot read the name of job $CHECK_RUN_ID"
-prefix=$(caller_prefix "$own")
-[[ -n $prefix ]] || fail "job $own does not run in a called workflow"
-jobs=$(attempt_jobs "$RUN_ID" "$RUN_ATTEMPT") \
-  || fail "cannot read the jobs of attempt $RUN_ATTEMPT of run $RUN_ID"
-entries=$(verdict "$own" "$prefix" "$jobs")
-summary_table "$entries"
-failures=$(jq -r '[.[] | select(.ok | not) | "\(.name): \(.result)"] | join(", ")' <<<"$entries")
-[[ -z $failures ]] || fail "jobs that did not succeed: $failures"
+own=$(job_name "${CHECK_RUN_ID}") || fail "cannot read the name of job ${CHECK_RUN_ID}"
+prefix=$(caller_prefix "${own}")
+[[ -n ${prefix} ]] || fail "job ${own} does not run in a called workflow"
+jobs=$(attempt_jobs "${RUN_ID}" "${RUN_ATTEMPT}") \
+  || fail "cannot read the jobs of attempt ${RUN_ATTEMPT} of run ${RUN_ID}"
+entries=$(verdict "${own}" "${prefix}" "${jobs}")
+summary_table "${entries}"
+failures=$(jq -r '[.[] | select(.ok | not) | "\(.name): \(.result)"] | join(", ")' <<<"${entries}")
+[[ -z ${failures} ]] || fail "jobs that did not succeed: ${failures}"

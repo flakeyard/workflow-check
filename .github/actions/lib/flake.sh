@@ -8,5 +8,5 @@ readonly FLAKE_FORM='^\.(/[A-Za-z0-9_][A-Za-z0-9._-]*)*$'
 # check_flake FLAKE: fails unless FLAKE has the form of FLAKE_FORM.
 check_flake() {
   local flake=$1
-  [[ $flake =~ $FLAKE_FORM ]] || fail "flake must be . or a path below it, not $flake"
+  [[ ${flake} =~ ${FLAKE_FORM} ]] || fail "flake must be . or a path below it, not ${flake}"
 }

@@ -8,14 +8,14 @@ set -euo pipefail
 : "${SHELL_LIB:?}" "${FLAKE:?}" "${ALLOW_DUPLICATES?}"
 # The tools of the runner, LC_ALL=C and inherit_errexit.
 # shellcheck source=/dev/null
-source "$SHELL_LIB/env.sh"
+source "${SHELL_LIB}/env.sh"
 step_environment
 # From $0, which no variable of the job can set (ADR-0004).
 lib=${0%/*}/../../../lib
 # shellcheck source=/dev/null
-source "$SHELL_LIB/report.sh"
+source "${SHELL_LIB}/report.sh"
 # shellcheck source=../../../lib/flake.sh
-source "$lib/flake.sh"
+source "${lib}/flake.sh"
 
 readonly LOCK_FILE=flake.lock
 # A source is one word: a line break would split it in two lines of the list.
@@ -24,9 +24,9 @@ readonly SOURCE_FORM='\A[^[:space:]]+\z'
 readonly UUID_FILE=/proc/sys/kernel/random/uuid
 
 check_inputs() {
-  check_flake "$FLAKE"
-  jq -e --arg form "$SOURCE_FORM" 'type == "array" and all(.[]; type == "string" and test($form))' \
-    <<<"$ALLOW_DUPLICATES" >/dev/null 2>&1 \
+  check_flake "${FLAKE}"
+  jq -e --arg form "${SOURCE_FORM}" 'type == "array" and all(.[]; type == "string" and test($form))' \
+    <<<"${ALLOW_DUPLICATES}" >/dev/null 2>&1 \
     || fail "allow-duplicates is not a JSON array of sources such as github.com/nixos/nixpkgs"
 }
 
@@ -34,16 +34,16 @@ check_inputs() {
 lock_path() {
   local dir=${FLAKE#.}
   dir=${dir#/}
-  printf '%s\n' "${dir:+$dir/}$LOCK_FILE"
+  printf '%s\n' "${dir:+${dir}/}${LOCK_FILE}"
 }
 
 # write_lines NAME TEXT: write the output NAME of several lines.
 write_lines() {
   local name=$1 text=$2 delimiter
-  delimiter=EOF_$(<"$UUID_FILE")
-  printf '%s<<%s\n%s\n%s\n' "$name" "$delimiter" "$text" "$delimiter" >>"$GITHUB_OUTPUT"
+  delimiter=EOF_$(<"${UUID_FILE}")
+  printf '%s<<%s\n%s\n%s\n' "${name}" "${delimiter}" "${text}" "${delimiter}" >>"${GITHUB_OUTPUT}"
 }
 
 check_inputs
-printf 'path=%s\n' "$(lock_path)" >>"$GITHUB_OUTPUT"
-write_lines allow-duplicates "$(jq -r '.[]' <<<"$ALLOW_DUPLICATES")"
+printf 'path=%s\n' "$(lock_path)" >>"${GITHUB_OUTPUT}"
+write_lines allow-duplicates "$(jq -r '.[]' <<<"${ALLOW_DUPLICATES}")"

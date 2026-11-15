@@ -5,7 +5,7 @@
 # of the shell library.
 
 # shellcheck source=/dev/null
-source "$SHELL_LIB/github/api.sh"
+source "${SHELL_LIB}/github/api.sh"
 
 # The root of the repository, as DIR of directory_at.
 readonly ROOT_DIR=""
@@ -14,10 +14,10 @@ readonly ROOT_DIR=""
 # REF; ROOT_DIR is the root.
 directory_path() {
   local dir=$1 ref=$2
-  if [[ $dir == "$ROOT_DIR" ]]; then
-    printf 'repos/%s/contents?ref=%s\n' "$REPO" "$ref"
+  if [[ ${dir} == "${ROOT_DIR}" ]]; then
+    printf 'repos/%s/contents?ref=%s\n' "${REPO}" "${ref}"
   else
-    printf 'repos/%s/contents/%s?ref=%s\n' "$REPO" "$dir" "$ref"
+    printf 'repos/%s/contents/%s?ref=%s\n' "${REPO}" "${dir}" "${ref}"
   fi
 }
 
@@ -30,9 +30,9 @@ directory_path() {
 # one would need the Git trees API.
 directory_at() {
   local dir=$1 ref=$2 body status=0
-  body=$(api_request GET "$(directory_path "$dir" "$ref")") || status=$?
-  ((status == 0)) || return "$status"
-  jq -ce 'arrays | map({name, type})' <<<"$body" 2>/dev/null || {
+  body=$(api_request GET "$(directory_path "${dir}" "${ref}")") || status=$?
+  ((status == 0)) || return "${status}"
+  jq -ce 'arrays | map({name, type})' <<<"${body}" 2>/dev/null || {
     printf '%s: not a directory\n' "${dir:-the root}" >&2
     return 1
   }

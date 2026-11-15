@@ -17,7 +17,7 @@ readonly PRESET_LIST_DEF='def preset_list:
 # platform, such as local>owner/repo; fails for any other preset.
 preset_source() {
   local preset=$1
-  [[ $preset =~ $REPOSITORY_PRESET ]] || return 1
+  [[ ${preset} =~ ${REPOSITORY_PRESET} ]] || return 1
   printf '%s\n' "${BASH_REMATCH[1]}"
 }
 
@@ -30,17 +30,17 @@ is_github_preset() {
 # repository; fails for any other preset.
 preset_repository() {
   local preset=$1
-  is_github_preset "$preset" && preset_source "$preset"
+  is_github_preset "${preset}" && preset_source "${preset}"
 }
 
 # preset_tag PRESET: print the tag after the last "#" of a preset, or nothing.
 preset_tag() {
   local preset=$1
-  [[ $preset == *'#'* ]] || return 0
+  [[ ${preset} == *'#'* ]] || return 0
   printf '%s\n' "${preset##*#}"
 }
 
 # is_builtin_preset PRESET: PRESET is a built-in preset of Renovate.
 is_builtin_preset() {
-  [[ $1 =~ $BUILTIN_PRESET ]]
+  [[ $1 =~ ${BUILTIN_PRESET} ]]
 }

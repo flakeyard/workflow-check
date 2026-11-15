@@ -20,13 +20,13 @@ readonly NIXPKGS_EOL_INPUT='${{ inputs.nixpkgs-eol }}'
 readonly DISPATCHED="github.event_name == 'workflow_dispatch'"
 
 # check_test NAME FILTER: FILTER is true of check.yaml.
-check_test() { repository_check "$check_workflow" "check.yaml: $1" "$2"; }
+check_test() { repository_check "${check_workflow}" "check.yaml: $1" "$2"; }
 
 if require_yq check.yaml; then
   check_workflow=$(load_workflow check.yaml)
   check_test "no permissions at the top level" '.permissions == {}'
   check_test "only the documented jobs" \
-    ".jobs | keys == $CHECK_JOBS"
+    ".jobs | keys == ${CHECK_JOBS}"
   check_test "no job asks for more than the documented permissions" \
     "[.jobs[] | .permissions | to_entries[] | select(${CHECK_PERMISSIONS}[.key] != .value)] == []"
   # The names of the jobs are part of the public API (ADR-0001); a matrix job
@@ -55,14 +55,14 @@ if require_yq check.yaml; then
     '(.jobs | keys - ["required"]) as $others
     | .jobs.required | (.needs | sort) == $others and condition == "${{ always() }}"'
   check_test "pending runs only on dispatch, and may be skipped otherwise" \
-    ".jobs.pending | condition == \"\${{ $DISPATCHED }}\""
+    ".jobs.pending | condition == \"\${{ ${DISPATCHED} }}\""
   check_test "the verdict lets exactly the skipped jobs be skipped" \
     "[.jobs.required.steps[] | select(.id == \"verdict\") | .with[\"check-may-skip\"]]
     == [\"{\\\"pending\\\": \${{ github.event_name != 'workflow_dispatch' }}, \\\"flake\\\": \${{ inputs.flake == '' }}}\"]"
   check_test "only dispatched runs post commit statuses" \
-    "[.jobs[] | select(condition != \"\${{ $DISPATCHED }}\") | .steps[]
+    "[.jobs[] | select(condition != \"\${{ ${DISPATCHED} }}\") | .steps[]
     | select(.uses == \"\$/.github/actions/commit-status\") | condition
-    | select(contains(\"$DISPATCHED\") | not)] == []"
+    | select(contains(\"${DISPATCHED}\") | not)] == []"
   check_test "the final status is posted on every outcome" \
     "[.jobs.required.steps[] | select(.uses == \"\$/.github/actions/commit-status\" or .id == \"context\") | condition]
     | length == 2 and all(startswith(\"\${{ always() && \"))"
@@ -75,27 +75,27 @@ if require_yq check.yaml; then
   check_test "the library runs whenever a later step of its job runs" \
     'library_jobs | all(library_runs_with_later_steps)'
   check_test "every check of meta is switched by a boolean input, true by default unless listed" \
-    "$SWITCHED_CHECKS"' as $names | '"$OFF_BY_DEFAULT"' as $off
+    "${SWITCHED_CHECKS}"' as $names | '"${OFF_BY_DEFAULT}"' as $off
     | [.jobs.meta.steps[] | .with.enabled // empty] == [$names[] | "${{ inputs.\(.) }}"]
     and ([$names[] as $name | .on.workflow_call.inputs[$name]
     | .type == "boolean" and .default == ($off | index($name) == null)] | all)'
   check_test "meta reports the check of flake.lock, which has no step there" \
     "[.jobs.meta.steps[] | select(.uses == \"\$/.github/actions/flake-lock-notice\") | .with
-    | [.flake, .[\"nixpkgs-eol\"]]] == [[\"\${{ inputs.flake }}\", \"$NIXPKGS_EOL_INPUT\"]]"
+    | [.flake, .[\"nixpkgs-eol\"]]] == [[\"\${{ inputs.flake }}\", \"${NIXPKGS_EOL_INPUT}\"]]"
   check_test "nixpkgs-eol is a boolean input, true by default" \
     '.on.workflow_call.inputs["nixpkgs-eol"] | .type == "boolean" and .default == true'
   check_test "flake checks flake.lock right after installing Nix" \
-    "$FLAKE_STEPS"' as $steps | uses_of("flake") as $uses
+    "${FLAKE_STEPS}"' as $steps | uses_of("flake") as $uses
     | ($uses | length) == ($steps | length)
     and ([range($steps | length)] | all(. as $i | $uses[$i] | startswith($steps[$i])))'
   check_test "the check of flake.lock and its inputs are switched by flake-lock" \
     "[.jobs.flake.steps[] | select(.uses | test(\"flake-lock\")) | condition]
-    == [\"$FLAKE_LOCK_CONDITION\", \"$FLAKE_LOCK_CONDITION\"]"
+    == [\"${FLAKE_LOCK_CONDITION}\", \"${FLAKE_LOCK_CONDITION}\"]"
   check_test "action-flake-lock gets the lock file, the duplicates and the end of life, and keeps the pin form" \
     '.jobs.flake.steps[] | select(.uses | startswith("flakeyard/action-flake-lock@")) | .with
     == {"path": "${{ steps.flake-lock-inputs.outputs.path }}",
     "allow-duplicates": "${{ steps.flake-lock-inputs.outputs.allow-duplicates }}",
-    "nixpkgs-eol": "'"$NIXPKGS_EOL_INPUT"'"}'
+    "nixpkgs-eol": "'"${NIXPKGS_EOL_INPUT}"'"}'
   check_test "the inputs of the check of flake.lock are those of the workflow" \
     '.jobs.flake.steps[] | select(.id == "flake-lock-inputs") | .with
     | del(.["shell-lib"]) == {"flake": "${{ inputs.flake }}", "allow-duplicates": "${{ inputs.allow-duplicates }}"}'
@@ -112,7 +112,7 @@ if require_yq check.yaml; then
   check_library_pins
   # The actions get the library from the job; they do not call it (ADR-0003),
   # and run every step through run-step.sh (ADR-0004).
-  for action in "$root"/.github/actions/*/action.yml; do
-    check_action_steps "${action#"$root/"}"
+  for action in "${root}"/.github/actions/*/action.yml; do
+    check_action_steps "${action#"${root}/"}"
   done
 fi

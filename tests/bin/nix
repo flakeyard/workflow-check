@@ -13,7 +13,7 @@ set -euo pipefail
 
 readonly NO_LOCK_UPDATE=--no-update-lock-file
 # Created by "flake check" in the fixtures of the test.
-readonly EVALUATED=$FIXTURES/nix-evaluated
+readonly EVALUATED=${FIXTURES}/nix-evaluated
 
 # stub_error MESSAGE: fail as the stub, not as Nix.
 stub_error() {
@@ -23,11 +23,11 @@ stub_error() {
 
 # locked ARG...: the arguments keep flake.lock as it is, and it is up to date.
 locked() {
-  [[ " $* " == *" $NO_LOCK_UPDATE "* ]] || stub_error "$1 without $NO_LOCK_UPDATE: $*"
-  [[ " $* " == *" $NO_LOCK_UPDATE ${NIX_OVERRIDES:-}${NIX_OVERRIDES:+ }"* ]] \
-    || stub_error "$1 without the overrides $NIX_OVERRIDES: $*"
+  [[ " $* " == *" ${NO_LOCK_UPDATE} "* ]] || stub_error "$1 without ${NO_LOCK_UPDATE}: $*"
+  [[ " $* " == *" ${NO_LOCK_UPDATE} ${NIX_OVERRIDES:-}${NIX_OVERRIDES:+ }"* ]] \
+    || stub_error "$1 without the overrides ${NIX_OVERRIDES}: $*"
   [[ -z ${NIX_STALE_LOCK:-} ]] && return 0
-  echo "error: flake requires lock file changes but they're not allowed due to '$NO_LOCK_UPDATE'" >&2
+  echo "error: flake requires lock file changes but they're not allowed due to '${NO_LOCK_UPDATE}'" >&2
   exit 1
 }
 
@@ -57,34 +57,34 @@ applied() {
 # evaluate EXPR: print the result of an --apply expression.
 evaluate() {
   local expression=$1
-  [[ -e $EVALUATED ]] || stub_error "eval before flake check"
-  case $expression in
-    *concatMap*) printf '%s\n' "$NIX_DECLARED" ;;
-    *checks*) printf '%s\n' "$NIX_CHECKS" ;;
-    *) stub_error "unknown expression: $expression" ;;
+  [[ -e ${EVALUATED} ]] || stub_error "eval before flake check"
+  case ${expression} in
+    *concatMap*) printf '%s\n' "${NIX_DECLARED}" ;;
+    *checks*) printf '%s\n' "${NIX_CHECKS}" ;;
+    *) stub_error "unknown expression: ${expression}" ;;
   esac
 }
 
 # check_flake: the flake evaluates unless $NIX_EVAL_ERROR is set.
 check_flake() {
   if [[ -n ${NIX_EVAL_ERROR:-} ]]; then
-    echo "error: $NIX_EVAL_ERROR" >&2
+    echo "error: ${NIX_EVAL_ERROR}" >&2
     exit 1
   fi
-  touch "$EVALUATED"
+  touch "${EVALUATED}"
 }
 
 # build ARG...: build the installables among ARG.
 build() {
   local arg
-  echo "nix $*" >>"$CALLS"
+  echo "nix $*" >>"${CALLS}"
   for arg; do
-    if [[ $arg == *#* ]] && failed "$(check_name "$arg")"; then exit 1; fi
+    if [[ ${arg} == *#* ]] && failed "$(check_name "${arg}")"; then exit 1; fi
   done
 }
 
 case "$1 ${2:-}" in
-  "config show") printf '%s\n' "$NIX_SYSTEM" ;;
+  "config show") printf '%s\n' "${NIX_SYSTEM}" ;;
   "eval "*) locked "$@" && evaluate "$(applied "$@")" ;;
   "flake check") locked "$@" && check_flake ;;
   "build "*) locked "$@" && build "$@" ;;
