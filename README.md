@@ -344,12 +344,14 @@ version. Its job `fixtures` runs `flake-checks` on the flakes in
 `tests/fixtures/flakes`, one of them with an input overridden by a revision of
 this repository on GitHub; the step may fail, and the next step checks that it
 failed exactly for the fixtures that must fail, so the run stays green. The
-flake of the repository runs the tests as `checks.unit`, and checks the scripts
-with shellcheck and shfmt (`checks.shell`) and the Nix files with nixfmt
-(`checks.formatting`); [atom-workflows][atom-workflows] lints the workflows and
-actions with actionlint and zizmor (`checks.workflows`). Before a pull request,
-run `nix flake check`, prettier, markdownlint, typos and `reuse lint`. The
-repository releases itself with
+flake of the repository runs the tests as `checks.unit`, and the checks of the
+atoms: [atom-nix][atom-nix] lints the Nix files with statix, deadnix and its
+relative paths hook (`checks.nix`), [atom-shell][atom-shell] lints the scripts
+with shellcheck (`checks.shell`), nixfmt and shfmt check their formatting
+through treefmt (`checks.treefmt`), and [atom-workflows][atom-workflows] lints
+the workflows and actions with actionlint and zizmor (`checks.workflows`).
+Before a pull request, run `nix flake check`, prettier, markdownlint, typos and
+`reuse lint`. The repository releases itself with
 [workflow-release](https://github.com/flakeyard/workflow-release) through
 [`release.yaml`](.github/workflows/release.yaml), whose release pull requests
 are checked by a dispatched run of `check-self.yaml`. The end of life of the
@@ -382,6 +384,8 @@ not released yet. Until they are:
 
 [action-flake-lock]: https://github.com/flakeyard/action-flake-lock
 [action-shell-lib]: https://github.com/flakeyard/action-shell-lib
+[atom-nix]: https://github.com/flakeyard/atom-nix
+[atom-shell]: https://github.com/flakeyard/atom-shell
 [atom-workflows]: https://github.com/flakeyard/atom-workflows
 [adr-0004]:
   docs/adr/records/0004-run-the-steps-of-internal-actions-through-run-step-sh.md
