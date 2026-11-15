@@ -10,3 +10,8 @@
 .github/zizmor.yaml
 zizmor.yml
 zizmor.yaml
+# atom-nix: statix
+statix.toml
+# atom-shell: shellcheck, which also reads the name without the dot
+.shellcheckrc
+shellcheckrc

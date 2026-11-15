@@ -20,7 +20,7 @@ expect summary "no configuration files of atom tools"
 finish
 
 for path in .github/actionlint.yaml .github/actionlint.yml .github/zizmor.yml .github/zizmor.yaml \
-  zizmor.yml zizmor.yaml; do
+  zizmor.yml zizmor.yaml statix.toml .shellcheckrc shellcheckrc; do
   tool_setup
   if [[ ${path} == */* ]]; then
     listing_fixture .github workflows/ "${path#*/}"
