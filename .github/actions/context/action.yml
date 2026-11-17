@@ -5,7 +5,7 @@ description: >-
   "check / required".
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
   check-run-id:
     description: The check run id of the job, job.check_run_id.

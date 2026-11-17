@@ -4,7 +4,7 @@ description: >-
   references is pinned to the tag of an immutable GitHub release.
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
   enabled:
     description: "'false' switches the check off; it then succeeds with a notice."

@@ -26,7 +26,7 @@ workflow-check, or that runs action-flake-lock itself.
 
 [FY-0035][fy-0035] requires that logic with two users lives in one place, also
 across repositories. Shell code that actions run without Nix is delivered by the
-library action [action-shell-lib][asl-0001]: a step of it writes its own
+library action [lib-actions][lib-actions-0001]: a step of it writes its own
 directory to the output `path`, and the consumer passes that path as `SHELL_LIB`
 and sources files from it. Its step needs `/usr/bin/bash`, so it runs on Linux
 only. FY-0035 lets the logic of an action live in a pinned library action and
@@ -69,9 +69,9 @@ action-flake-lock with the rule, and the input, in a `0.y` bump, with
 
 ### Shell library
 
-workflow-check adopts action-shell-lib. Each job of `check.yaml` calls the
-library once, as its first step after the checkout if it has one, with an `id`,
-and passes the output `path` to its internal actions as an input, which their
+workflow-check adopts lib-actions. Each job of `check.yaml` calls the library
+once, as its first step after the checkout if it has one, with an `id`, and
+passes the output `path` to its internal actions as an input, which their
 `action.yml` gives to `run.sh` as the variable `SHELL_LIB`. Internal actions do
 not call the library themselves, so the `uses:` pin of the library appears once
 per job, all at the same commit, and not in every internal `action.yml`.
@@ -147,15 +147,15 @@ stand:
   default, to action-flake-lock.
 - When `nixpkgs-eol` is `false`, the job `meta` MUST emit a notice saying that
   the end-of-life check is switched off; it MUST NOT be left out silently.
-- Each job of `check.yaml` that runs library code MUST call action-shell-lib
-  exactly once, as its first step after the checkout if it has one, and MUST
-  pass its output `path` to the internal actions that need it.
-- Internal actions MUST NOT call action-shell-lib themselves. Every `uses:` of
-  action-shell-lib in `check.yaml` MUST name the same commit, by full SHA.
-- Logic that another repository also uses MUST come from action-shell-lib, not
-  from a copy in `.github/actions/lib`.
-- Tests MUST take action-shell-lib at the commit pinned in `check.yaml`.
-- Adopting a release of action-shell-lib MUST NOT change the public API of
+- Each job of `check.yaml` that runs library code MUST call lib-actions exactly
+  once, as its first step after the checkout if it has one, and MUST pass its
+  output `path` to the internal actions that need it.
+- Internal actions MUST NOT call lib-actions themselves. Every `uses:` of
+  lib-actions in `check.yaml` MUST name the same commit, by full SHA.
+- Logic that another repository also uses MUST come from lib-actions, not from a
+  copy in `.github/actions/lib`.
+- Tests MUST take lib-actions at the commit pinned in `check.yaml`.
+- Adopting a release of lib-actions MUST NOT change the public API of
   workflow-check; it MAY be released as a major version only when it does.
 - A caller's job that runs only on a schedule MUST be a job of its `test.yaml`,
   with `if: ${{ github.event_name == 'schedule' }}`, listed in `needs` of
@@ -192,8 +192,8 @@ stand:
 
 [afl-0002]:
   https://github.com/flakeyard/action-flake-lock/blob/main/docs/adr/records/0002-end-of-life-of-nixpkgs.md
-[asl-0001]:
-  https://github.com/flakeyard/action-shell-lib/blob/main/docs/adr/records/0001-shell-library.md
+[lib-actions-0001]:
+  https://github.com/flakeyard/lib-actions/blob/main/docs/adr/records/0001-shell-library.md
 [fy-0024]:
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0024-versioning-and-support.md
 [fy-0026]:

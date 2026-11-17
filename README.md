@@ -265,8 +265,7 @@ private repository of another owner reads as missing.
 
 GitHub-hosted Ubuntu runners, x86_64 and arm64: the steps that call the API use
 their `bash`, `gh`, `jq` and GNU coreutils (`base64`, `mktemp`). Every job
-starts [action-shell-lib][action-shell-lib], which fails the job on any other
-runner.
+starts [lib-actions][lib-actions], which fails the job on any other runner.
 
 ## Development
 
@@ -317,10 +316,10 @@ referenced with `$/`:
   cross-checked against the jobs of the run attempt; its rules are the named
   `def`s of `required/verdict.jq`.
 
-Each job that runs these actions calls [action-shell-lib][action-shell-lib]
-once, as its first step after the checkout if it has one, and passes its output
-`path` to each of them as the input `shell-lib`, which the action gives to its
-script as `SHELL_LIB`; the actions do not call the library themselves
+Each job that runs these actions calls [lib-actions][lib-actions] once, as its
+first step after the checkout if it has one, and passes its output `path` to
+each of them as the input `shell-lib`, which the action gives to its script as
+`SHELL_LIB`; the actions do not call the library themselves
 ([ADR-0003](docs/adr/records/0003-shell-library-and-end-of-life.md)).
 
 Each action has one step, which runs its script `scripts/step/<action>.sh`
@@ -411,7 +410,7 @@ not released yet. Until they are:
 [MIT](LICENSE).
 
 [action-flake-lock]: https://github.com/flakeyard/action-flake-lock
-[action-shell-lib]: https://github.com/flakeyard/action-shell-lib
+[lib-actions]: https://github.com/flakeyard/lib-actions
 [atom-nix]: https://github.com/flakeyard/atom-nix
 [atom-shell]: https://github.com/flakeyard/atom-shell
 [atom-workflows]: https://github.com/flakeyard/atom-workflows

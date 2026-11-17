@@ -23,7 +23,7 @@ readonly REPOSITORY_DEFS='
   def steps: [.jobs[] | .steps // [] | .[]];
   def uses_of($job): [.jobs[$job].steps // [] | .[] | .uses // empty];
   def own_action: (.uses // "") | startswith("$/.github/actions/");
-  def library: (.uses // "") | startswith("flakeyard/action-shell-lib@");
+  def library: (.uses // "") | startswith("flakeyard/lib-actions@");
   def library_index: if (.steps[0].uses // "") | startswith("actions/checkout@") then 1 else 0 end;
   def calls_library_once:
     library_index as $index

@@ -4,7 +4,7 @@ description: >-
   root of the checkout, and fails when one is missing or fails.
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
   flake:
     description: The flake, "." or a relative path such as ./dev.

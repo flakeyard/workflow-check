@@ -5,7 +5,7 @@ description: >-
   repository whose flake is below it, and allow-duplicates as a newline list.
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
   flake:
     description: The flake, "." or a relative path such as ./dev.

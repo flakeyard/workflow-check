@@ -4,7 +4,7 @@ description: >-
   workflow_dispatch, whose check runs do not count for required checks.
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
   state:
     description: pending, success or failure.

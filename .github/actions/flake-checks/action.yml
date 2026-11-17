@@ -4,7 +4,7 @@ description: >-
   checking that the runners given cover exactly the systems the flake declares.
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
   flake:
     description: The flake, "." or a relative path such as ./dev.

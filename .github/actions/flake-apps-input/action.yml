@@ -5,7 +5,7 @@ description: >-
   flake is empty, so that no flake job could run them.
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
   flake:
     description: The flake, "." or a relative path such as ./dev; empty for none.
