@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/flakeyard/workflow-check/compare/v0.6.0...v0.6.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* take the shell library from lib-actions ([#127](https://github.com/flakeyard/workflow-check/issues/127)) ([e45fd51](https://github.com/flakeyard/workflow-check/commit/e45fd515cdc8d2a7c8efc5bbf9956db3f971164e))
+
 ## [0.6.0](https://github.com/flakeyard/workflow-check/compare/v0.5.1...v0.6.0) (2026-11-17)
 
 
