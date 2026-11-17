@@ -48,6 +48,15 @@ on:
           schedule.
         type: string
         default: "{}"
+      apps:
+        description: >-
+          JSON array of the names of apps of the flake to run with nix run
+          from the root of the checkout, after the checks, on every system.
+          Empty runs none; it then succeeds with a notice. Apps with an empty
+          flake fail. The caller chooses the runs, such as those of its
+          schedule.
+        type: string
+        default: "[]"
       extra-substituters:
         description: Binary caches to use besides cache.nixos.org.
         type: string
@@ -195,6 +204,13 @@ jobs:
           enabled: ${{ inputs.flake-lock }}
           flake: ${{ inputs.flake }}
           nixpkgs-eol: ${{ inputs.nixpkgs-eol }}
+      # The apps run in the flake jobs; without a flake, apps must be empty.
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/flake-apps-input
+        with:
+          shell-lib: ${{ steps.lib.outputs.path }}
+          flake: ${{ inputs.flake }}
+          apps: ${{ inputs.apps }}
       - if: ${{ !cancelled() }}
         uses: $/.github/actions/tool-configs
         with:
@@ -262,6 +278,14 @@ jobs:
           systems: ${{ inputs.systems }}
           expect-checks: ${{ inputs.expect-checks }}
           override-inputs: ${{ inputs.override-inputs }}
+      # Also when the checks failed, so that one run reports both.
+      - if: ${{ !cancelled() }}
+        uses: $/.github/actions/flake-apps
+        with:
+          shell-lib: ${{ steps.lib.outputs.path }}
+          flake: ${{ inputs.flake }}
+          system: ${{ matrix.system }}
+          apps: ${{ inputs.apps }}
 
   required:
     name: required

@@ -19,9 +19,9 @@ lib=${0%/*}/../../../lib
 source "${SHELL_LIB}/report.sh"
 # shellcheck source=../../../lib/flake.sh
 source "${lib}/flake.sh"
+# shellcheck source=../../../lib/outputs.sh
+source "${lib}/outputs.sh"
 
-readonly SYSTEM_FORM='^[a-z0-9_]+-[a-z0-9_]+$'
-readonly CHECK_NAME_FORM='^[A-Za-z0-9_][A-Za-z0-9_.+-]*$'
 # The names of the inputs of the root, which override-inputs may override,
 # and the schemes of the references it may override them with (ADR-0005). jq,
 # whose $ also matches before a final newline, so \A and \z.
@@ -32,6 +32,8 @@ readonly REFERENCE_SPACE='[\s\p{Cc}]'
 # Every command that reads the flake uses flake.lock as committed, with the
 # inputs of OVERRIDE_INPUTS overridden; check_overrides adds them.
 flake_options=(--no-update-lock-file)
+# The names of the checks for SYSTEM, which output_names sets.
+names=()
 # The overridden inputs, each name followed by its reference.
 overridden=()
 # The systems of every per-system output, applied to the outputs of the flake.
@@ -42,12 +44,12 @@ readonly DECLARED_SYSTEMS='outputs: builtins.concatMap
 
 check_inputs() {
   check_flake "${FLAKE}"
-  [[ ${SYSTEM} =~ ${SYSTEM_FORM} ]] || fail "not a system: ${SYSTEM}"
+  check_system "${SYSTEM}"
   jq -e 'type == "array" and length > 0
     and all(.[]; (.system | type) == "string" and (.runner | type) == "string")' \
     <<<"${SYSTEMS}" >/dev/null 2>&1 || fail "systems is not a JSON array of {system, runner}"
-  jq -e --arg form "${CHECK_NAME_FORM}" 'type == "array" and all(.[]; type == "string" and test($form))' \
-    <<<"${EXPECT_CHECKS}" >/dev/null 2>&1 || fail "expect-checks is not a JSON array of check names"
+  # shellcheck disable=SC2310 # is_name_list is one test; its status is the result.
+  is_name_list "${EXPECT_CHECKS}" || fail "expect-checks is not a JSON array of check names"
   check_overrides
 }
 
@@ -121,23 +123,6 @@ check_evaluation() {
     || fail "the flake ${FLAKE} does not evaluate on ${SYSTEM}"
 }
 
-# check_names: set names to the names of the checks for SYSTEM; fails when an
-# expected one is missing.
-check_names() {
-  local found missing listed
-  found=$("${nix}" eval "${flake_options[@]}" --json "${FLAKE}#." \
-    --apply "outputs: builtins.attrNames ((outputs.checks or { }).\"${SYSTEM}\" or { })") \
-    || fail "cannot evaluate the checks of the flake ${FLAKE}"
-  missing=$(jq -r --argjson found "${found}" '. - $found | join(", ")' <<<"${EXPECT_CHECKS}")
-  [[ -z ${missing} ]] || fail "the flake ${FLAKE} has no checks.${SYSTEM} of: ${missing}"
-  jq -e --arg form "${CHECK_NAME_FORM}" 'all(.[]; test($form))' <<<"${found}" >/dev/null \
-    || fail "check names must match ${CHECK_NAME_FORM}"
-  listed=$(jq -r '.[]' <<<"${found}")
-  names=()
-  # A check name matches CHECK_NAME_FORM, so an empty line is no name.
-  [[ -z ${listed} ]] || mapfile -t names <<<"${listed}"
-}
-
 # installable NAME: the installable of the check NAME for SYSTEM.
 installable() {
   printf '%s#.checks.%s."%s"\n' "${FLAKE}" "${SYSTEM}" "$1"
@@ -165,15 +150,12 @@ build_checks() {
 
 check_inputs
 report_overrides
-# action-setup-nix puts nix on the PATH of the job; every other tool comes
-# from SYSTEM_PATH.
-nix=$(job_tool nix) \
-  || fail "no nix on the PATH of the job: install Nix before this step, such as with flakeyard/action-setup-nix"
+find_nix
 check_native
 # The flake check runs first: it reports a lock file that does not match.
 check_evaluation
 check_systems
-check_names
+output_names "${FLAKE}" "${SYSTEM}" checks "${EXPECT_CHECKS}" "${flake_options[@]}"
 if ((${#names[@]} == 0)); then
   notice "the flake ${FLAKE} has no checks for ${SYSTEM}"
   exit 0

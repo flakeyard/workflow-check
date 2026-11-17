@@ -16,7 +16,8 @@ readonly REPO=o/r SHA=aaa
 # é: the action scripts must not depend on the locale of the runner.
 readonly WIDE_LOCALE=en_US.UTF-8
 # The tools of the runner that the scripts and the stubs run from
-# SYSTEM_PATH. Not nix: flake-checks runs the nix of the PATH of the job.
+# SYSTEM_PATH. Not nix: flake-checks and flake-apps run the nix of the PATH
+# of the job.
 readonly RUNNER_TOOLS=(base64 bash cat env grep jq mktemp rm sed touch)
 # The directory of the internal actions, ACTIONS/<name>/action.yml.
 readonly ACTIONS=${root}/.github/actions
@@ -41,7 +42,7 @@ copy_library "${shell_lib}" "${TESTING_BIN}:${sysbin}"
 readonly shell_lib
 # The variables of the stub of nix, which every step gets besides the
 # variables of its run line and of the stubs of the library.
-stub_variables=(NIX_SYSTEM NIX_STALE_LOCK NIX_EVAL_ERROR NIX_DECLARED NIX_CHECKS NIX_FAILED NIX_OVERRIDES)
+stub_variables=(NIX_SYSTEM NIX_STALE_LOCK NIX_EVAL_ERROR NIX_DECLARED NIX_CHECKS NIX_APPS NIX_FAILED NIX_OVERRIDES)
 
 # action_setup: setup for a run of an action script, which reads the library,
 # the repository and the commit.

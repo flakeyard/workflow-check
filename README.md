@@ -120,6 +120,16 @@ check:
   `override-inputs`, and the job lists them in a notice and above the table of
   its job summary; `flake.lock` stays as committed and is checked as in every
   other run. With `flake: ""` there are no such jobs.
+- **Flake apps.** After the checks, also when they failed, each flake job runs
+  the apps of `apps` of its system in their order, each with `nix run` from the
+  root of the checkout, so that an app of `./dev` checks the files of the whole
+  repository, and lists the result of each in the job summary. They run with the
+  committed `flake.lock` and without `override-inputs`, with `GH_TOKEN` and
+  `GITHUB_TOKEN` set to the token of the job, which can only read the
+  repository, such as for the rate limits of lychee. An app that the flake does
+  not have fails the job before any app runs; an app that fails fails it after
+  the others ran. An empty `apps`, the default, runs none and emits a notice;
+  apps with `flake: ""` fail the job `meta`, since no flake job would run them.
 - **Pull request title.** It follows Conventional Commits:
   `<type>[(<scope>)][!]: <description>`, with a type of `pr-title-types` and a
   scope of lower-case letters, digits and `._/-`. The title is read from the
@@ -170,6 +180,12 @@ root lock. A check that is switched off by its input succeeds with a notice.
   `git+https://` or `github:` and has no whitespace or control characters;
   anything else fails the flake jobs before Nix runs. The caller chooses the
   runs that override, such as those of its `schedule`.
+- `apps` (default `[]`): JSON array of the names of apps of the flake to run in
+  the flake jobs, such as `["markdown-links"]`. A name has the form
+  `^[A-Za-z0-9_][A-Za-z0-9_.+-]*$`; anything else fails the flake jobs before
+  Nix runs. The caller chooses the runs that run them, such as those of its
+  `schedule`:
+  `${{ github.event_name == 'schedule' && '["markdown-links"]' || '[]' }}`.
 - `extra-substituters`, `extra-trusted-public-keys` (default `""`): binary
   caches besides `cache.nixos.org`, passed to action-setup-nix.
 - `timeout-minutes` (default `60`): timeout of each flake job.
@@ -290,6 +306,10 @@ referenced with `$/`:
   action-flake-lock;
 - `flake-checks`: the flake evaluates and its checks build natively, on runners
   for exactly the systems it declares;
+- `flake-apps-input`: `apps` is a list of app names, and empty when there is no
+  flake;
+- `flake-apps`: the apps of `apps` exist and succeed, run from the root of the
+  checkout;
 - `context`: the context of the commit status, from the name of the job that
   runs it, read through `job.check_run_id`;
 - `commit-status`: the commit status of a run started by `workflow_dispatch`;
@@ -307,8 +327,8 @@ Each action has one step, which runs its script `scripts/step/<action>.sh`
 through `run-step.sh` of the library, with only the variables that its run line
 names ([ADR-0004][adr-0004]): earlier steps of the job cannot run code in it
 through `BASH_ENV`, exported functions or `BASH_SOURCE`. The script runs the
-tools of the runner, `SYSTEM_PATH` of `env.sh`; `flake-checks` runs the `nix`
-that `job_tool` of `env.sh` finds on the `PATH` of the job.
+tools of the runner, `SYSTEM_PATH` of `env.sh`; `flake-checks` and `flake-apps`
+run the `nix` that `job_tool` of `env.sh` finds on the `PATH` of the job.
 
 The scripts of the actions source modules of the library from `SHELL_LIB`:
 `report.sh` reports errors, notices and lines of the job summary, escaping the
@@ -318,8 +338,10 @@ checked commit and `github/forms.sh` holds the form of repository names and
 lists of them. Helpers that only this repository uses are in `lib`:
 `lib/github/jobs.sh` reads the name of a job and the jobs of a run attempt,
 `lib/github/directory.sh` lists a directory at the checked commit,
-`lib/flake.sh` holds the form of the input `flake` and `lib/renovate.sh` reads
-presets of a Renovate configuration.
+`lib/flake.sh` holds the form of the input `flake`, `lib/apps.sh` that of the
+input `apps`, `lib/outputs.sh` the forms of systems and output names, the `nix`
+of the job and the names of an output of the flake, for `flake-checks` and
+`flake-apps`, and `lib/renovate.sh` reads presets of a Renovate configuration.
 
 `tests/run.sh` tests the scripts with the harness and the stubs of `gh`, `date`
 and `sleep` in `internal/testing/` of the library, and the stub of `nix` in
@@ -344,10 +366,10 @@ functions and `BASH_SOURCE` that must run nothing.
 The repository checks itself with
 [`check-self.yaml`](.github/workflows/check-self.yaml), which calls the workflow
 of the same commit through `$/`, so a pull request is checked by its own
-version. Its job `fixtures` runs `flake-checks` on the flakes in
-`tests/fixtures/flakes`, one of them with an input overridden by a revision of
-this repository on GitHub; the step may fail, and the next step checks that it
-failed exactly for the fixtures that must fail, so the run stays green. The
+version. Its job `fixtures` runs `flake-checks` and `flake-apps` on the flakes
+in `tests/fixtures/flakes`, one of them with an input overridden by a revision
+of this repository on GitHub; the step may fail, and the next step checks that
+it failed exactly for the fixtures that must fail, so the run stays green. The
 flake of the repository runs the tests as `checks.unit`, and the checks of the
 atoms: [atom-nix][atom-nix] lints the Nix files with statix, deadnix and its
 relative paths hook (`checks.nix`), [atom-shell][atom-shell] lints the scripts
@@ -364,8 +386,10 @@ caller. The design of the workflow is recorded in
 [ADR-0001](docs/adr/records/0001-check-pull-requests-and-pushes.md), the check
 of `flake.lock` in [ADR-0002](docs/adr/records/0002-check-flake-lock.md) and the
 overridden inputs and the check of configuration files of atom tools in
-[ADR-0005](docs/adr/records/0005-override-inputs-on-a-schedule-and-forbid-configuration-files.md),
-under [`docs/adr`](docs/adr); the rules for callers are those of
+[ADR-0005](docs/adr/records/0005-override-inputs-on-a-schedule-and-forbid-configuration-files.md)
+and the apps in
+[ADR-0006](docs/adr/records/0006-run-apps-of-the-flake-on-request.md), under
+[`docs/adr`](docs/adr); the rules for callers are those of
 [FY-0034](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0034-check-every-repository-with-workflow-check.md);
 both follow
 [FY-0009](https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0009-ci-on-runners.md)

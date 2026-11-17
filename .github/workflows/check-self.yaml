@@ -22,8 +22,8 @@ concurrency:
         && github.event.action != 'edited' }}
 
 jobs:
-  # The flake checks of fixtures that must pass or fail, on x86_64-linux;
-  # the repository's own flake is checked by the call below.
+  # The flake checks and apps of fixtures that must pass or fail, on
+  # x86_64-linux; the repository's own flake is checked by the call below.
   fixtures:
     name: Fixture ${{ matrix.case }}
     strategy:
@@ -67,6 +67,19 @@ jobs:
             fixture: override
             expect-checks: '["ok"]'
             outcome: failure
+          # flake-apps instead of flake-checks.
+          - case: apps
+            fixture: apps
+            apps: '["root"]'
+            outcome: success
+          - case: failing-app
+            fixture: apps
+            apps: '["root","fails"]'
+            outcome: failure
+          - case: missing-app
+            fixture: apps
+            apps: '["root","missing"]'
+            outcome: failure
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -79,6 +92,7 @@ jobs:
         uses: flakeyard/action-shell-lib@eaafc6e2caac916f38620d0e5c6001fa3834a340 # v0.3.2
       - uses: flakeyard/action-setup-nix@b285505bb60774b9b04c26289f24f0087c69b644 # v0.1.8
       - id: flake-checks
+        if: ${{ !matrix.apps }}
         continue-on-error: true
         uses: $/.github/actions/flake-checks
         with:
@@ -90,8 +104,19 @@ jobs:
             {"system":"aarch64-linux","runner":"ubuntu-24.04-arm"}]
           expect-checks: ${{ matrix.expect-checks }}
           override-inputs: ${{ matrix.override-inputs || '{}' }}
+      - id: flake-apps
+        if: ${{ matrix.apps }}
+        continue-on-error: true
+        uses: $/.github/actions/flake-apps
+        with:
+          shell-lib: ${{ steps.lib.outputs.path }}
+          flake: ./tests/fixtures/flakes/${{ matrix.fixture }}
+          system: x86_64-linux
+          apps: ${{ matrix.apps }}
       - env:
-          OUTCOME: ${{ steps.flake-checks.outcome }}
+          OUTCOME: >-
+            ${{ matrix.apps && steps.flake-apps.outcome
+            || steps.flake-checks.outcome }}
           EXPECTED: ${{ matrix.outcome }}
         run: tests/ci/outcome.sh
 
