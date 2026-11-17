@@ -2,7 +2,7 @@ name: Preflight
 description: Fails unless the caller's event is one that the check workflow supports.
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
 runs:
   using: composite

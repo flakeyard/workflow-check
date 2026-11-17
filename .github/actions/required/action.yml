@@ -5,7 +5,7 @@ description: >-
   without failing.
 inputs:
   shell-lib:
-    description: The directory of the shell library, the output path of action-shell-lib.
+    description: The directory of the shell library, the output path of lib-actions.
     required: true
   caller:
     description: The needs of the caller job, toJSON(needs), as the caller passed it.

@@ -15,7 +15,7 @@ readonly OFF_BY_DEFAULT='["forbid-tool-configs"]'
 # The steps of flake, in their order: the checks of the flake's flake.lock and
 # of the root flake.lock come right after Nix is installed and before the
 # flake is evaluated, and the apps run after the checks (ADR-0006).
-readonly FLAKE_STEPS='["actions/checkout@","flakeyard/action-shell-lib@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks","$/.github/actions/flake-apps"]'
+readonly FLAKE_STEPS='["actions/checkout@","flakeyard/lib-actions@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks","$/.github/actions/flake-apps"]'
 readonly FLAKE_LOCK_CONDITION='${{ inputs.flake-lock }}'
 # The root flake.lock is checked when there is one besides the flake's, also
 # when the check of the flake's lock failed.

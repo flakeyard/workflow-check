@@ -148,7 +148,7 @@ jobs:
       statuses: write # the commit status of a dispatched run
     steps:
       - id: lib
-        uses: flakeyard/action-shell-lib@eaafc6e2caac916f38620d0e5c6001fa3834a340 # v0.3.2
+        uses: flakeyard/lib-actions@db9e3be2b6be4383c465ed6a0f996c1cf7870d1e # v0.1.0
       - id: context
         uses: $/.github/actions/context
         with:
@@ -173,7 +173,7 @@ jobs:
     steps:
       - id: lib
         if: ${{ !cancelled() }}
-        uses: flakeyard/action-shell-lib@eaafc6e2caac916f38620d0e5c6001fa3834a340 # v0.3.2
+        uses: flakeyard/lib-actions@db9e3be2b6be4383c465ed6a0f996c1cf7870d1e # v0.1.0
       - uses: $/.github/actions/preflight
         with:
           shell-lib: ${{ steps.lib.outputs.path }}
@@ -237,7 +237,7 @@ jobs:
           persist-credentials: false
       - id: lib
         if: ${{ !cancelled() }}
-        uses: flakeyard/action-shell-lib@eaafc6e2caac916f38620d0e5c6001fa3834a340 # v0.3.2
+        uses: flakeyard/lib-actions@db9e3be2b6be4383c465ed6a0f996c1cf7870d1e # v0.1.0
       - id: flake-lock-inputs
         if: ${{ inputs.flake-lock }}
         uses: $/.github/actions/flake-lock-inputs
@@ -300,7 +300,7 @@ jobs:
       # Also in a cancelled run, so that the final status gets the library.
       - id: lib
         if: ${{ always() }}
-        uses: flakeyard/action-shell-lib@eaafc6e2caac916f38620d0e5c6001fa3834a340 # v0.3.2
+        uses: flakeyard/lib-actions@db9e3be2b6be4383c465ed6a0f996c1cf7870d1e # v0.1.0
       - id: verdict
         uses: $/.github/actions/required
         with:

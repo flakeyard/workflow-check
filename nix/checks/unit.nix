@@ -16,9 +16,9 @@
         allLocales = false;
         locales = [ "en_US.UTF-8/UTF-8" ];
       };
-      libraryPin = ".*flakeyard/action-shell-lib@([0-9a-f]{40}).*";
+      libraryPin = ".*flakeyard/lib-actions@([0-9a-f]{40}).*";
       shellLib = builtins.fetchGit {
-        url = "https://github.com/flakeyard/action-shell-lib";
+        url = "https://github.com/flakeyard/lib-actions";
         rev = builtins.head (
           builtins.match libraryPin (builtins.readFile (root + "/.github/workflows/check.yaml"))
         );

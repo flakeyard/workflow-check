@@ -13,7 +13,7 @@ review_by:
 ## Context
 
 [ADR-0003](0003-shell-library-and-end-of-life.md) gives each internal action of
-`.github/actions` the directory of [action-shell-lib][asl-0001] as the input
+`.github/actions` the directory of [lib-actions][lib-actions-0001] as the input
 `shell-lib`. Each action runs `"$GITHUB_ACTION_PATH/run.sh"` from `shell: bash`,
 with every variable of the job, and `run.sh` sources the modules of the library
 and of `.github/actions/lib`.
@@ -27,15 +27,15 @@ of `check.yaml` is pinned code of flakeyard or `actions/checkout`, but any of
 them, or a later change of a job, could steer every script of the workflow, with
 the token of its job.
 
-[FY-0035][fy-0035] and [action-shell-lib ADR-0001][asl-0001] answer this threat
-for consumers of the library: `run-step.sh STEP_DIR STEP [VARIABLE...]` runs the
-script `STEP_DIR/STEP.sh` with `/usr/bin/env -i` and `/usr/bin/bash -p`, with
-only the variables named on the run line of the step and `SHELL_LIB`, and finds
-its own modules from `$0`. `step_environment` of `env.sh` then sets `PATH` to
-`SYSTEM_PATH`, the tools of the runner, and keeps the `PATH` of the job in
-`JOB_PATH`. action-setup-nix and action-flake-lock run every step this way. Nix
-is not a tool of the runner: action-setup-nix puts it on the `PATH` of the job,
-from `/nix/var/nix/profiles/default/bin`.
+[FY-0035][fy-0035] and [lib-actions ADR-0001][lib-actions-0001] answer this
+threat for consumers of the library: `run-step.sh STEP_DIR STEP [VARIABLE...]`
+runs the script `STEP_DIR/STEP.sh` with `/usr/bin/env -i` and
+`/usr/bin/bash -p`, with only the variables named on the run line of the step
+and `SHELL_LIB`, and finds its own modules from `$0`. `step_environment` of
+`env.sh` then sets `PATH` to `SYSTEM_PATH`, the tools of the runner, and keeps
+the `PATH` of the job in `JOB_PATH`. action-setup-nix and action-flake-lock run
+every step this way. Nix is not a tool of the runner: action-setup-nix puts it
+on the `PATH` of the job, from `/nix/var/nix/profiles/default/bin`.
 
 ## Decision
 
@@ -137,7 +137,7 @@ variable `SHELL_LIB`, in place of giving it to `run.sh`.
   exported functions, but leaves `PATH`, `BASH_SOURCE` and every other variable
   of the job to the script.
 
-[asl-0001]:
-  https://github.com/flakeyard/action-shell-lib/blob/main/docs/adr/records/0001-shell-library.md
+[lib-actions-0001]:
+  https://github.com/flakeyard/lib-actions/blob/main/docs/adr/records/0001-shell-library.md
 [fy-0035]:
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0035-extract-logic-that-has-two-users.md
