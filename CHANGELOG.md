@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/flakeyard/workflow-check/compare/v0.5.1...v0.6.0) (2026-11-17)
+
+
+### Features
+
+* check the root flake.lock of a repository whose flake is in a subdirectory ([#120](https://github.com/flakeyard/workflow-check/issues/120)) ([89206b8](https://github.com/flakeyard/workflow-check/commit/89206b8fd76b7d88794df0cd3a70deb7869b23a2))
+* forbid the configuration files of atom-markdown and atom-text ([#121](https://github.com/flakeyard/workflow-check/issues/121)) ([873bb78](https://github.com/flakeyard/workflow-check/commit/873bb783a4cfcb57e5debcd42561b91a8b0b2656))
+* run apps of the flake on request ([#122](https://github.com/flakeyard/workflow-check/issues/122)) ([a3ff09e](https://github.com/flakeyard/workflow-check/commit/a3ff09e53c5fb5048aeb00bf57e8ae5def2b3496))
+
 ## [0.5.1](https://github.com/flakeyard/workflow-check/compare/v0.5.0...v0.5.1) (2026-11-17)
 
 
