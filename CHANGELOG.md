@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/flakeyard/workflow-check/compare/v0.5.0...v0.5.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **deps:** update flakeyard/action-flake-lock action to v0.4.0 ([#119](https://github.com/flakeyard/workflow-check/issues/119)) ([b63c1f2](https://github.com/flakeyard/workflow-check/commit/b63c1f2e54546a1d83fea7a1cd3ccb2a24c7a821))
+
 ## [0.5.0](https://github.com/flakeyard/workflow-check/compare/v0.4.0...v0.5.0) (2026-11-15)
 
 
