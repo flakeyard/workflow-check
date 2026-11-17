@@ -139,10 +139,10 @@ check:
   Built-in presets of Renovate are versioned with Renovate and are not checked.
 - **Configuration files of atom tools.** With `forbid-tool-configs: true`, no
   entry exists at a standard root path of the configuration of an atom tool,
-  such as `.github/actionlint.yaml` or `.github/zizmor.yml`: the default
-  configuration of the atom applies, and an exception is an inline comment of
-  the tool, such as `# zizmor: ignore[<audit>]`. The paths are listed, grouped
-  by atom, in
+  such as `.github/actionlint.yaml` or `.github/zizmor.yml`, or of its ignore
+  file, such as `.prettierignore`: the default configuration of the atom
+  applies, and an exception is an inline comment of the tool, such as
+  `# zizmor: ignore[<audit>]`. The paths are listed, grouped by atom, in
   [`tool-configs/scripts/step/paths.txt`](.github/actions/tool-configs/scripts/step/paths.txt).
 
 Repository files are read through the contents API at the checked commit; only
