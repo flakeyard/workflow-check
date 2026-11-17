@@ -93,10 +93,11 @@ check:
 
 - **Flake lock.** In every flake job, right after Nix is installed and before
   the flake is evaluated, [action-flake-lock][action-flake-lock] checks
-  `<flake>/flake.lock`: every flakeyard input is locked to the commit of a
-  release `vX.Y.Z` of the major version its `ref` names, no source is locked
-  twice unless it is in `allow-duplicates`, and every input of the root is
-  pinned as
+  `<flake>/flake.lock`, and also the root `flake.lock` when the flake is below
+  the root, such as `./dev`, and the root has one: every flakeyard input is
+  locked to the commit of a release `vX.Y.Z` of the major version its `ref`
+  names, no source is locked twice unless it is in `allow-duplicates`, and every
+  input of the root is pinned as
   `git+https://github.com/<owner>/<repo>?ref=<ref>&rev=<commit>&shallow=1`.
   Unless `nixpkgs-eol` is `false`, it also checks the end of life of the nixpkgs
   branch of every input of the root: it warns from 30 days before it, and after
@@ -146,8 +147,8 @@ check:
 
 Repository files are read through the contents API at the checked commit; only
 the jobs that build the flake check out the repository, and only the check of
-`flake.lock` reads a file of that checkout, the lock that Nix then uses. A check
-that is switched off by its input succeeds with a notice.
+`flake.lock` reads files of that checkout: the lock that Nix then uses, and the
+root lock. A check that is switched off by its input succeeds with a notice.
 
 ## Inputs
 
@@ -185,9 +186,11 @@ that is switched off by its input succeeds with a notice.
   templates are not checked.
 - `flake-lock` (default `true`): check `flake.lock` with action-flake-lock.
 - `allow-duplicates` (default `[]`): JSON array of the normalized sources that
-  `flake.lock` may lock more than once, such as `github.com/nixos/nixpkgs` or
-  `github.com/<owner>/<repo>?dir=<dir>`, for example a second nixpkgs for a
-  broken tool.
+  each checked `flake.lock` may lock more than once, such as
+  `github.com/nixos/nixpkgs` or `github.com/<owner>/<repo>?dir=<dir>`, for
+  example a second nixpkgs for a broken tool. The root lock of a flake below the
+  root, which an atom ships to projects, needs none: a source that its inputs
+  lock twice becomes one node with `follows` in the root `flake.nix`.
 - `nixpkgs-eol` (default `true`): check the end of life of the nixpkgs branches
   of `flake.lock` with action-flake-lock.
 - `forbid-tool-configs` (default `false`): fail on configuration files of atom
@@ -282,8 +285,9 @@ referenced with `$/`:
   `paths.txt`;
 - `flake-lock-notice`: a notice in `meta` when the check of `flake.lock` or its
   check of the end of life of nixpkgs is switched off, or there is no flake;
-- `flake-lock-inputs`: the lock file of the flake and `allow-duplicates` as the
-  newline list of action-flake-lock;
+- `flake-lock-inputs`: the lock file of the flake, the root lock file of a flake
+  below the root, and `allow-duplicates` as the newline list of
+  action-flake-lock;
 - `flake-checks`: the flake evaluates and its checks build natively, on runners
   for exactly the systems it declares;
 - `context`: the context of the commit status, from the name of the job that

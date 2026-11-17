@@ -241,7 +241,18 @@ jobs:
           path: ${{ steps.flake-lock-inputs.outputs.path }}
           allow-duplicates: ${{ steps.flake-lock-inputs.outputs.allow-duplicates }}
           nixpkgs-eol: ${{ inputs.nixpkgs-eol }}
-      # Also when the check of flake.lock failed, so that one run reports both.
+      # The root flake.lock of a repository whose flake is below the root,
+      # such as the lock that an atom ships to projects next to the lock of
+      # its ./dev; also when the check of the flake's lock failed.
+      - if: >-
+          ${{ !cancelled() && inputs.flake-lock
+          && steps.flake-lock-inputs.outputs.root-path != '' }}
+        uses: flakeyard/action-flake-lock@0d088001ca9dd95b3fe97eae18762b79d6f85b07 # v0.4.0
+        with:
+          path: ${{ steps.flake-lock-inputs.outputs.root-path }}
+          allow-duplicates: ${{ steps.flake-lock-inputs.outputs.allow-duplicates }}
+          nixpkgs-eol: ${{ inputs.nixpkgs-eol }}
+      # Also when a check of flake.lock failed, so that one run reports both.
       - if: ${{ !cancelled() }}
         uses: $/.github/actions/flake-checks
         with:

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Writes the inputs of action-flake-lock to GITHUB_OUTPUT: path, the lock file
-# of the flake FLAKE relative to the workspace, and allow-duplicates, the
-# sources of the JSON array ALLOW_DUPLICATES one per line. The action checks
-# the form of every source; this script only keeps each source on its own line.
+# of the flake FLAKE relative to the workspace; root-path, flake.lock when FLAKE
+# is below the root and the checkout in GITHUB_WORKSPACE has a flake.lock at
+# its root, else empty; and allow-duplicates, the sources of the JSON array
+# ALLOW_DUPLICATES one per line. The action checks the form of every source;
+# this script only keeps each source on its own line.
 # shellcheck source-path=SCRIPTDIR
 set -euo pipefail
-: "${SHELL_LIB:?}" "${FLAKE:?}" "${ALLOW_DUPLICATES?}"
+: "${SHELL_LIB:?}" "${FLAKE:?}" "${ALLOW_DUPLICATES?}" "${GITHUB_WORKSPACE:?}"
 # The tools of the runner, LC_ALL=C and inherit_errexit.
 # shellcheck source=/dev/null
 source "${SHELL_LIB}/env.sh"
@@ -37,6 +39,14 @@ lock_path() {
   printf '%s\n' "${dir:+${dir}/}${LOCK_FILE}"
 }
 
+# root_lock_path: print the lock file at the root of the checkout when FLAKE
+# is below the root and that file exists, the lock that an atom ships to
+# projects (FY-0040); print nothing otherwise.
+root_lock_path() {
+  [[ ${FLAKE} != . && -f ${GITHUB_WORKSPACE}/${LOCK_FILE} ]] || return 0
+  printf '%s\n' "${LOCK_FILE}"
+}
+
 # write_lines NAME TEXT: write the output NAME of several lines.
 write_lines() {
   local name=$1 text=$2 delimiter
@@ -47,5 +57,7 @@ write_lines() {
 check_inputs
 path=$(lock_path)
 printf 'path=%s\n' "${path}" >>"${GITHUB_OUTPUT}"
+root_path=$(root_lock_path)
+printf 'root-path=%s\n' "${root_path}" >>"${GITHUB_OUTPUT}"
 allowed=$(jq -r '.[]' <<<"${ALLOW_DUPLICATES}")
 write_lines allow-duplicates "${allowed}"

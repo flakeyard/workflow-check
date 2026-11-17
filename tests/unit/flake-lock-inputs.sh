@@ -4,10 +4,12 @@
 
 step="flake-lock-inputs"
 
-# inputs_setup FLAKE ALLOW_DUPLICATES: the inputs of the action.
+# inputs_setup FLAKE ALLOW_DUPLICATES: the inputs of the action, with a
+# checkout that has no flake.lock at its root.
 inputs_setup() {
   action_setup
-  apply FLAKE="$1" ALLOW_DUPLICATES="$2"
+  mkdir "${work}/workspace"
+  apply FLAKE="$1" ALLOW_DUPLICATES="$2" GITHUB_WORKSPACE="${work}/workspace"
 }
 
 # The lock file of every form of flake.
@@ -15,9 +17,32 @@ for flake_and_path in ".:flake.lock" "./dev:dev/flake.lock" "./a/b.c:a/b.c/flake
   inputs_setup "${flake_and_path%%:*}" '[]'
   run_step "flake-lock-inputs: the lock file of ${flake_and_path%%:*}" ok "${ACTIONS}/${step}" "${step}"
   expect output path "${flake_and_path#*:}"
+  expect output root-path ""
   expect_lines allow-duplicates ""
   finish
 done
+
+# The root flake.lock of a repository whose flake is below the root (FY-0040).
+for flake in ./dev ./a/b.c; do
+  inputs_setup "${flake}" '[]'
+  touch "${work}/workspace/flake.lock"
+  run_step "flake-lock-inputs: the root lock file besides that of ${flake}" ok "${ACTIONS}/${step}" "${step}"
+  expect output root-path flake.lock
+  finish
+done
+
+inputs_setup . '[]'
+touch "${work}/workspace/flake.lock"
+run_step "flake-lock-inputs: the root lock file of the flake . only once" ok "${ACTIONS}/${step}" "${step}"
+expect output path flake.lock
+expect output root-path ""
+finish
+
+inputs_setup ./dev '[]'
+mkdir "${work}/workspace/flake.lock"
+run_step "flake-lock-inputs: a directory flake.lock is no lock file" ok "${ACTIONS}/${step}" "${step}"
+expect output root-path ""
+finish
 
 inputs_setup . '["github.com/nixos/nixpkgs","github.com/o/r?dir=sub"]'
 run_step "flake-lock-inputs: one source per line" ok "${ACTIONS}/${step}" "${step}"
@@ -50,7 +75,9 @@ expect warnings 0
 finish
 
 inputs_setup ./dev '["github.com/nixos/nixpkgs"]'
+touch "${work}/workspace/flake.lock"
 run_hostile "flake-lock-inputs: earlier steps of the job run no code in it" ok "${ACTIONS}/${step}" "${step}"
 expect output path dev/flake.lock
+expect output root-path flake.lock
 expect_lines allow-duplicates github.com/nixos/nixpkgs
 finish

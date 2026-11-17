@@ -47,6 +47,13 @@ Nix with action-setup-nix, which evaluates nothing; the next step,
 of the `meta` job read files through the contents API and do not check out code
 (ADR-0001, "Checks").
 
+[FY-0040][fy-0040] lets an atom pin `lib-atom` in its root `flake.lock`, the
+lock that it ships to projects, while its checks are in a flake below the root,
+`./dev`, with a lock of its own. It requires workflow-check to check the root
+`flake.lock` of a repository whose checked flake is in a subdirectory. The root
+locks of atom-shell and atom-nix lock nixpkgs twice, as inputs of treefmt-nix
+and git-hooks.nix, which projects replace with `follows`.
+
 FY-0024 lets a minor release add a check that could fail a passing project only
 while the product is in its `0.y.z` previews; from `v1.0.0` on, such a check
 ships disabled and is enabled in the next major version.
@@ -61,6 +68,17 @@ the action evaluating its own flake does not count. `flake-checks` still runs
 when the check fails (`if: ${{ !cancelled() }}`), so one run reports both. Since
 the check runs in the job of every system, its annotations repeat once per
 system; that is accepted.
+
+When the flake is below the root, such as `./dev`, and the checkout has a
+`flake.lock` at its root, a second step runs the same action on that file right
+after the first, with the same `allow-duplicates` and `nixpkgs-eol`, also when
+the first failed. The internal action `flake-lock-inputs` gives both paths: it
+tells whether the root lock exists from the checkout. A repository without a
+root `flake.lock`, or whose flake is `.`, gets one check. The root lock is free
+of duplicates: a source that its inputs lock twice, such as the nixpkgs of the
+upstream inputs of an atom, becomes one node with `follows` in the root
+`flake.nix`, such as `git-hooks.inputs.nixpkgs.follows = "treefmt-nix/nixpkgs"`,
+not an entry of `allow-duplicates`.
 
 The check reads the lock of the checkout in the job that builds the flake, not
 through the contents API, so that it checks the very lock Nix uses, and it runs
@@ -100,7 +118,11 @@ release of `action-flake-lock`, as FY-0022 requires.
 - The job `flake` MUST run `action-flake-lock`, pinned by full commit SHA, on
   `<flake>/flake.lock` as its first step after action-setup-nix, before any step
   that evaluates the repository's flake.
-- `flake-checks` MUST run also when the check of `flake.lock` failed, unless the
+- When the flake is below the root and the root has a `flake.lock`, the job
+  `flake` MUST also run `action-flake-lock` on the root `flake.lock`, with the
+  same inputs, before any step that evaluates the repository's flake and also
+  when the check of `<flake>/flake.lock` failed.
+- `flake-checks` MUST run also when a check of `flake.lock` failed, unless the
   run was cancelled.
 - The check MUST be switched by the input `flake-lock`, `true` by default, and
   intentional duplicates MUST be given by the input `allow-duplicates`, a JSON
@@ -125,6 +147,11 @@ release of `action-flake-lock`, as FY-0022 requires.
   adopts the check, unless it sets `flake-lock: false` or lists the duplicate.
 - (−) The check runs once per system, so its annotations and its API lookups
   repeat on every flake job.
+- (+) The lock that an atom ships to projects is checked as its dev lock is.
+- (−) `allow-duplicates` applies to both locks; a source allowed for the lock of
+  the flake is also allowed in the root lock, which should need none.
+- (−) An atom whose root lock locks nixpkgs twice fails until its root
+  `flake.nix` makes them one node with `follows`.
 - (±) The "Checks" constraint of ADR-0001 has one exception, stated here.
 
 ## Alternatives considered
@@ -149,3 +176,5 @@ release of `action-flake-lock`, as FY-0022 requires.
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0022-bootstrap.md
 [fy-0026]:
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0026-stable-nixpkgs.md
+[fy-0040]:
+  https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0040-share-code-through-lib-repositories.md
