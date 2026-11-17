@@ -20,7 +20,14 @@ expect summary "no configuration files of atom tools"
 finish
 
 for path in .github/actionlint.yaml .github/actionlint.yml .github/zizmor.yml .github/zizmor.yaml \
-  zizmor.yml zizmor.yaml statix.toml .shellcheckrc shellcheckrc; do
+  zizmor.yml zizmor.yaml statix.toml .shellcheckrc shellcheckrc \
+  .prettierrc .prettierrc.json .prettierrc.json5 .prettierrc.yaml .prettierrc.yml .prettierrc.toml \
+  .prettierrc.js .prettierrc.cjs .prettierrc.mjs .prettierrc.ts .prettierrc.cts .prettierrc.mts \
+  prettier.config.js prettier.config.cjs prettier.config.mjs prettier.config.ts prettier.config.cts \
+  prettier.config.mts .prettierignore \
+  .markdownlint.json .markdownlint.jsonc .markdownlint.yaml .markdownlint.yml .markdownlintrc \
+  .markdownlintignore lychee.toml .lycheeignore \
+  typos.toml _typos.toml .typos.toml .editorconfig-checker.json .ecrc; do
   tool_setup
   if [[ ${path} == */* ]]; then
     listing_fixture .github workflows/ "${path#*/}"
@@ -45,7 +52,8 @@ finish
 
 # Names that are only like the paths, in other directories or of other case.
 tool_setup
-listing_fixture "" README.md .github/ actionlint.yaml Zizmor.yml zizmor.yml.bak
+listing_fixture "" README.md .github/ actionlint.yaml Zizmor.yml zizmor.yml.bak .editorconfig \
+  package.json prettierrc typos.toml.bak
 listing_fixture .github workflows/ zizmor.json ZIZMOR.YML
 run_step "tool-configs: only the exact paths fail" ok "${ACTIONS}/${step}" "${step}"
 finish
