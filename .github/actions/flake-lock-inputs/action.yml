@@ -1,8 +1,8 @@
 name: Inputs of the flake.lock check
 description: >-
   Validates the inputs of the check of flake.lock and gives them in the form of
-  action-flake-lock: the lock file of the flake, and allow-duplicates as a
-  newline list.
+  action-flake-lock: the lock file of the flake, the lock file at the root of a
+  repository whose flake is below it, and allow-duplicates as a newline list.
 inputs:
   shell-lib:
     description: The directory of the shell library, the output path of action-shell-lib.
@@ -17,6 +17,11 @@ outputs:
   path:
     description: The lock file of the flake, relative to the workspace, such as dev/flake.lock.
     value: ${{ steps.run.outputs.path }}
+  root-path:
+    description: >-
+      flake.lock when the flake is below the root and the checkout has a
+      flake.lock at its root; empty otherwise.
+    value: ${{ steps.run.outputs.root-path }}
   allow-duplicates:
     description: The sources of allow-duplicates, one per line.
     value: ${{ steps.run.outputs.allow-duplicates }}
@@ -32,4 +37,4 @@ runs:
       run: >-
         /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
         "$GITHUB_ACTION_PATH/scripts/step" flake-lock-inputs FLAKE
-        ALLOW_DUPLICATES GITHUB_OUTPUT
+        ALLOW_DUPLICATES GITHUB_WORKSPACE GITHUB_OUTPUT

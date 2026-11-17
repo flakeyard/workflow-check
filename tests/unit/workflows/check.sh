@@ -12,10 +12,14 @@ readonly CHECK_JOBS='["flake","meta","pending","required"]'
 # them that are off by default (ADR-0005).
 readonly SWITCHED_CHECKS='["pr-title","renovate-config","release-tags","flake-lock","forbid-tool-configs"]'
 readonly OFF_BY_DEFAULT='["forbid-tool-configs"]'
-# The steps of flake, in their order: the check of flake.lock comes right
-# after Nix is installed and before the flake is evaluated.
-readonly FLAKE_STEPS='["actions/checkout@","flakeyard/action-shell-lib@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks"]'
+# The steps of flake, in their order: the checks of the flake's flake.lock and
+# of the root flake.lock come right after Nix is installed and before the
+# flake is evaluated.
+readonly FLAKE_STEPS='["actions/checkout@","flakeyard/action-shell-lib@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks"]'
 readonly FLAKE_LOCK_CONDITION='${{ inputs.flake-lock }}'
+# The root flake.lock is checked when there is one besides the flake's, also
+# when the check of the flake's lock failed.
+readonly ROOT_LOCK_CONDITION="\${{ !cancelled() && inputs.flake-lock && steps.flake-lock-inputs.outputs.root-path != '' }}"
 readonly NIXPKGS_EOL_INPUT='${{ inputs.nixpkgs-eol }}'
 readonly DISPATCHED="github.event_name == 'workflow_dispatch'"
 
@@ -88,14 +92,16 @@ if require_yq check.yaml; then
     "${FLAKE_STEPS}"' as $steps | uses_of("flake") as $uses
     | ($uses | length) == ($steps | length)
     and ([range($steps | length)] | all(. as $i | $uses[$i] | startswith($steps[$i])))'
-  check_test "the check of flake.lock and its inputs are switched by flake-lock" \
+  check_test "the checks of flake.lock and their inputs are switched by flake-lock" \
     "[.jobs.flake.steps[] | select(.uses | test(\"flake-lock\")) | condition]
-    == [\"${FLAKE_LOCK_CONDITION}\", \"${FLAKE_LOCK_CONDITION}\"]"
-  check_test "action-flake-lock gets the lock file, the duplicates and the end of life, and keeps the pin form" \
-    '.jobs.flake.steps[] | select(.uses | startswith("flakeyard/action-flake-lock@")) | .with
-    == {"path": "${{ steps.flake-lock-inputs.outputs.path }}",
+    == [\"${FLAKE_LOCK_CONDITION}\", \"${FLAKE_LOCK_CONDITION}\", \"${ROOT_LOCK_CONDITION}\"]"
+  check_test "action-flake-lock gets each lock file, the duplicates and the end of life, and keeps the pin form" \
+    '[.jobs.flake.steps[] | select(.uses | startswith("flakeyard/action-flake-lock@")) | .with]
+    == (["path", "root-path"] | map({"path": "${{ steps.flake-lock-inputs.outputs.\(.) }}",
     "allow-duplicates": "${{ steps.flake-lock-inputs.outputs.allow-duplicates }}",
-    "nixpkgs-eol": "'"${NIXPKGS_EOL_INPUT}"'"}'
+    "nixpkgs-eol": "'"${NIXPKGS_EOL_INPUT}"'"}))'
+  check_test "both checks of flake.lock run the same action-flake-lock" \
+    '[.jobs.flake.steps[] | select(.uses | startswith("flakeyard/action-flake-lock@")) | .uses] | unique | length == 1'
   check_test "the inputs of the check of flake.lock are those of the workflow" \
     '.jobs.flake.steps[] | select(.id == "flake-lock-inputs") | .with
     | del(.["shell-lib"]) == {"flake": "${{ inputs.flake }}", "allow-duplicates": "${{ inputs.allow-duplicates }}"}'
