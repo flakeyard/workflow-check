@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Stub of nix for tests of flake-checks.
+# Stub of nix for tests of flake-checks and flake-apps.
 #
 # "config show system" prints $NIX_SYSTEM. Every other command reads the
 # flake and must not write flake.lock: without --no-update-lock-file it fails,
 # and with it, it fails when $NIX_STALE_LOCK is set. "flake check" fails when
-# $NIX_EVAL_ERROR is set. "eval --apply EXPR" fails unless "flake check" ran
-# before, and prints $NIX_DECLARED for the expression of the declared systems
-# and $NIX_CHECKS for the names of the checks. "build" is appended to $CALLS;
-# it and "path-info" fail for the checks named in $NIX_FAILED, separated by
-# spaces.
+# $NIX_EVAL_ERROR is set. "eval --apply EXPR" prints $NIX_DECLARED for the
+# expression of the declared systems and $NIX_CHECKS for the names of the
+# checks, and fails for both unless "flake check" ran before; it prints
+# $NIX_APPS for the names of the apps, and fails when $NIX_EVAL_ERROR is set.
+# "build" and "run" are appended to $CALLS, "run" with the directory it runs
+# in and the tokens it gets; they and "path-info" fail for the checks and apps
+# named in $NIX_FAILED, separated by spaces.
 set -euo pipefail
 
 readonly NO_LOCK_UPDATE=--no-update-lock-file
@@ -58,10 +60,15 @@ applied() {
 # evaluate EXPR: print the result of an --apply expression.
 evaluate() {
   local expression=$1
-  [[ -e ${EVALUATED} ]] || stub_error "eval before flake check"
+  case ${expression} in
+    *concatMap* | *checks*) [[ -e ${EVALUATED} ]] || stub_error "eval before flake check" ;;
+    *apps*) check_flake ;;
+    *) ;;
+  esac
   case ${expression} in
     *concatMap*) printf '%s\n' "${NIX_DECLARED}" ;;
     *checks*) printf '%s\n' "${NIX_CHECKS}" ;;
+    *apps*) printf '%s\n' "${NIX_APPS}" ;;
     *) stub_error "unknown expression: ${expression}" ;;
   esac
 }
@@ -86,6 +93,15 @@ build() {
   done
 }
 
+# run ARG...: run the app, the last of ARG.
+run() {
+  local name
+  echo "nix $*" >>"${CALLS}"
+  echo "in ${PWD} with GH_TOKEN=${GH_TOKEN-unset} GITHUB_TOKEN=${GITHUB_TOKEN-unset}" >>"${CALLS}"
+  name=$(check_name "${@: -1}")
+  exit_if_failed "${name}"
+}
+
 case "$1 ${2:-}" in
   "config show") printf '%s\n' "${NIX_SYSTEM}" ;;
   "eval "*)
@@ -100,6 +116,10 @@ case "$1 ${2:-}" in
   "build "*)
     locked "$@"
     build "$@"
+    ;;
+  "run "*)
+    locked "$@"
+    run "$@"
     ;;
   "path-info "*)
     locked "$@"

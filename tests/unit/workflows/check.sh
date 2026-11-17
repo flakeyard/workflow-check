@@ -14,8 +14,8 @@ readonly SWITCHED_CHECKS='["pr-title","renovate-config","release-tags","flake-lo
 readonly OFF_BY_DEFAULT='["forbid-tool-configs"]'
 # The steps of flake, in their order: the checks of the flake's flake.lock and
 # of the root flake.lock come right after Nix is installed and before the
-# flake is evaluated.
-readonly FLAKE_STEPS='["actions/checkout@","flakeyard/action-shell-lib@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks"]'
+# flake is evaluated, and the apps run after the checks (ADR-0006).
+readonly FLAKE_STEPS='["actions/checkout@","flakeyard/action-shell-lib@","$/.github/actions/flake-lock-inputs","flakeyard/action-setup-nix@","flakeyard/action-flake-lock@","flakeyard/action-flake-lock@","$/.github/actions/flake-checks","$/.github/actions/flake-apps"]'
 readonly FLAKE_LOCK_CONDITION='${{ inputs.flake-lock }}'
 # The root flake.lock is checked when there is one besides the flake's, also
 # when the check of the flake's lock failed.
@@ -49,6 +49,8 @@ if require_yq check.yaml; then
   check_test "only flake checks out code, without credentials" \
     '[.jobs | to_entries[] | select(.value.steps | any(.uses // "" | test("actions/checkout"))) | .key] == ["flake"]
     and ([.jobs.flake.steps[] | select(.uses | test("actions/checkout")) | .with["persist-credentials"]] == [false])'
+  # flake-apps gives github.token of the job to the apps, and action-flake-lock
+  # reads releases with it; the workflow passes no token to any step.
   check_test "flake gets no token" \
     '[.jobs.flake | .. | strings | select(test("token"; "i"))] == []'
   check_test "flake runs unless cancelled, when there is a flake" \
@@ -114,6 +116,16 @@ if require_yq check.yaml; then
     '([.jobs.flake.steps[] | select(.uses == "$/.github/actions/flake-checks") | .with["override-inputs"]]
     == ["${{ inputs.override-inputs }}"])
     and (.on.workflow_call.inputs["override-inputs"] | .type == "string" and .default == "{}")'
+  check_test "flake-apps runs the apps of the caller after the checks, also when they failed, none by default" \
+    '([.jobs.flake.steps[] | select(.uses == "$/.github/actions/flake-apps")
+    | [condition, (.with | del(.["shell-lib"]))]]
+    == [["${{ !cancelled() }}",
+    {"flake": "${{ inputs.flake }}", "system": "${{ matrix.system }}", "apps": "${{ inputs.apps }}"}]])
+    and (.on.workflow_call.inputs.apps | .type == "string" and .default == "[]")'
+  check_test "meta validates apps against the flake, also when another check failed" \
+    '[.jobs.meta.steps[] | select(.uses == "$/.github/actions/flake-apps-input")
+    | [condition, (.with | del(.["shell-lib"]))]]
+    == [["${{ !cancelled() }}", {"flake": "${{ inputs.flake }}", "apps": "${{ inputs.apps }}"}]]'
 
   check_library_pins
   # The actions get the library from the job; they do not call it (ADR-0003),

@@ -1,0 +1,37 @@
+name: Flake apps
+description: >-
+  Runs the apps of a flake that the caller names, each with nix run from the
+  root of the checkout, and fails when one is missing or fails.
+inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
+  flake:
+    description: The flake, "." or a relative path such as ./dev.
+    required: true
+  system:
+    description: The system of this runner, such as x86_64-linux.
+    required: true
+  apps:
+    description: >-
+      JSON array of the names of the apps to run; empty runs none and
+      succeeds with a notice.
+    default: "[]"
+runs:
+  using: composite
+  steps:
+    # The apps get github.token, which has the permissions of the job, for
+    # the rate limits of the GitHub API, such as for the links of lychee.
+    - shell: /usr/bin/bash --noprofile --norc -p -e -o pipefail {0}
+      env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
+        FLAKE: ${{ inputs.flake }}
+        SYSTEM: ${{ inputs.system }}
+        APPS: ${{ inputs.apps }}
+        GH_TOKEN: ${{ github.token }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: >-
+        /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
+        "$GITHUB_ACTION_PATH/scripts/step" flake-apps FLAKE SYSTEM APPS
+        GH_TOKEN GITHUB_TOKEN GITHUB_WORKSPACE GITHUB_STEP_SUMMARY PATH HOME
+        XDG_CONFIG_HOME XDG_CACHE_HOME

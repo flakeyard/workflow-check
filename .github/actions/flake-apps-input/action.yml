@@ -1,0 +1,26 @@
+name: Inputs of the flake apps
+description: >-
+  Validates the input apps in the job meta, which also runs without a flake:
+  fails when it is not a JSON array of app names, and when it names apps but
+  flake is empty, so that no flake job could run them.
+inputs:
+  shell-lib:
+    description: The directory of the shell library, the output path of action-shell-lib.
+    required: true
+  flake:
+    description: The flake, "." or a relative path such as ./dev; empty for none.
+    required: true
+  apps:
+    description: JSON array of the names of the apps to run.
+    default: "[]"
+runs:
+  using: composite
+  steps:
+    - shell: /usr/bin/bash --noprofile --norc -p -e -o pipefail {0}
+      env:
+        SHELL_LIB: ${{ inputs.shell-lib }}
+        FLAKE: ${{ inputs.flake }}
+        APPS: ${{ inputs.apps }}
+      run: >-
+        /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
+        "$GITHUB_ACTION_PATH/scripts/step" flake-apps-input FLAKE APPS

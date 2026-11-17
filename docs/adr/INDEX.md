@@ -6,7 +6,7 @@
 
 _None._
 
-## Accepted (5)
+## Accepted (6)
 
 - [ADR-0001](records/0001-check-pull-requests-and-pushes.md) Check pull requests
   and pushes (2026-11-05)
@@ -19,6 +19,8 @@ _None._
 - [ADR-0005](records/0005-override-inputs-on-a-schedule-and-forbid-configuration-files.md)
   Override inputs on a schedule and forbid configuration files of atom tools
   (2026-11-12)
+- [ADR-0006](records/0006-run-apps-of-the-flake-on-request.md) Run apps of the
+  flake on request (2026-11-17)
 
 ## Rejected (0)
 
