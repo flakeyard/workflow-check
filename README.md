@@ -281,7 +281,7 @@ installs the git hooks each time the shell starts. The container runs
 the directory runs that branch's shell hook. Commit inside the container, whose
 Nix store has the tools of the hooks. The checks below, such as
 `nix flake check`, run in it as in CI; tools that the shell does not have come
-from nixpkgs, such as `nix run nixpkgs#typos`. Nix on the host works as well:
+from nixpkgs, such as `nix run nixpkgs#reuse`. Nix on the host works as well:
 `direnv allow` or `nix develop` gives the same shell.
 
 The workflow in [`.github/workflows/check.yaml`](.github/workflows/check.yaml)
@@ -372,12 +372,21 @@ it failed exactly for the fixtures that must fail, so the run stays green. The
 flake of the repository runs the tests as `checks.unit`, and the checks of the
 atoms: [atom-nix][atom-nix] lints the Nix files with statix, deadnix and its
 relative paths hook (`checks.nix`), [atom-shell][atom-shell] lints the scripts
-with shellcheck (`checks.shell`), nixfmt and shfmt check their formatting
-through treefmt (`checks.treefmt`), and [atom-workflows][atom-workflows] lints
-the workflows and actions with actionlint and zizmor (`checks.workflows`).
-Before a pull request, run `nix flake check`, prettier, markdownlint, typos and
-`reuse lint`. The repository releases itself with
-[workflow-release](https://github.com/flakeyard/workflow-release) through
+with shellcheck (`checks.shell`), [atom-markdown][atom-markdown] lints the
+Markdown files with markdownlint and checks their links inside the repository
+with lychee (`checks.markdown`), [atom-text][atom-text] checks the spelling of
+every file with typos and its line endings, final newline and trailing
+whitespace with editorconfig-checker (`checks.text`),
+[atom-data-formats][atom-data-formats] lints the YAML, JSON and TOML files with
+yamllint, biome and taplo and the metadata of the actions and of Renovate with
+check-jsonschema (`checks.data-formats`), nixfmt, shfmt, prettier and taplo
+check the formatting through treefmt (`checks.treefmt`), and
+[atom-workflows][atom-workflows] lints the workflows and actions with actionlint
+and zizmor (`checks.workflows`). The weekly run of `check-self.yaml` also checks
+every link of the Markdown files and runs the audits of zizmor that need the
+network, with the apps `markdown-links` and `workflows-online`. Before a pull
+request, run `nix flake check` and `reuse lint`. The repository releases itself
+with [workflow-release](https://github.com/flakeyard/workflow-release) through
 [`release.yaml`](.github/workflows/release.yaml), whose release pull requests
 are checked by a dispatched run of `check-self.yaml`. The end of life of the
 nixpkgs branch is checked by the weekly run of `check-self.yaml`, as in every
@@ -402,8 +411,7 @@ Following
 this repository checks itself with its own workflow, but some of its checks are
 not released yet. Until they are:
 
-- prettier, markdownlint, typos and REUSE run locally before every pull request;
-  the atoms will provide them.
+- REUSE runs locally before every pull request; an atom will provide it.
 
 ## License
 
@@ -411,8 +419,11 @@ not released yet. Until they are:
 
 [action-flake-lock]: https://github.com/flakeyard/action-flake-lock
 [lib-actions]: https://github.com/flakeyard/lib-actions
+[atom-data-formats]: https://github.com/flakeyard/atom-data-formats
+[atom-markdown]: https://github.com/flakeyard/atom-markdown
 [atom-nix]: https://github.com/flakeyard/atom-nix
 [atom-shell]: https://github.com/flakeyard/atom-shell
+[atom-text]: https://github.com/flakeyard/atom-text
 [atom-workflows]: https://github.com/flakeyard/atom-workflows
 [adr-0004]:
   docs/adr/records/0004-run-the-steps-of-internal-actions-through-run-step-sh.md

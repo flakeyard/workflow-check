@@ -132,7 +132,10 @@ jobs:
       statuses: write # commit statuses of dispatched runs
     with:
       needs: ${{ toJSON(needs) }}
-      expect-checks: '["nix","shell","treefmt","unit","workflows"]'
+      expect-checks: '["data-formats","markdown","nix","shell","text","treefmt","unit","workflows"]'
+      # Weekly, the apps that need the network: the links of the Markdown files
+      # and the online audits of the workflows.
+      apps: ${{ github.event_name == 'schedule' && '["markdown-links","workflows-online"]' || '[]' }}
       renovate-presets: '["flakeyard/renovate-config"]'
       # A flakeyard repository keeps no configuration files of atom tools
       # (FY-0037).
