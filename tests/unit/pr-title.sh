@@ -86,6 +86,47 @@ fixture "repos/${REPO}/pulls/5" "HTTP 500"
 run_step "pr-title: an API error fails" fail "${ACTIONS}/${step}" "${step}"
 finish
 
+readonly QUEUE_SHA=0123456789abcdef0123456789abcdef01234567
+
+# queue_setup TITLE: a merge_group run of the queue branch of pull request 12
+# to main, whose title is TITLE.
+queue_setup() {
+  local pull
+  action_setup
+  apply EVENT=merge_group HEAD_REF="refs/heads/gh-readonly-queue/main/pr-12-${QUEUE_SHA}" \
+    ENABLED=true TYPES="${DEFAULT_TYPES}"
+  pull=$(jq -n --arg title "$1" '{number: 12, title: $title}')
+  fixture "repos/${REPO}/pulls/12" "${pull}"
+}
+
+queue_setup "fix: keep the queue"
+run_step "pr-title: a merge group checks the title of its pull request" ok "${ACTIONS}/${step}" "${step}"
+expect summary "pull request #12: \`fix: keep the queue\`"
+finish
+
+queue_setup "Keep the queue"
+run_step "pr-title: a merge group fails on a bad title of its pull request" fail "${ACTIONS}/${step}" "${step}"
+expect message "pull request #12: the title"
+finish
+
+queue_setup "fix: a base with a slash"
+apply HEAD_REF="refs/heads/gh-readonly-queue/release/v1/pr-12-${QUEUE_SHA}"
+run_step "pr-title: a merge group of a base with a slash" ok "${ACTIONS}/${step}" "${step}"
+expect summary "pull request #12"
+finish
+
+for head_ref in "" "refs/heads/main" "gh-readonly-queue/main/pr-12-${QUEUE_SHA}" \
+  "refs/heads/gh-readonly-queue/main/pr-12" "refs/heads/gh-readonly-queue/main/pr-0-${QUEUE_SHA}" \
+  "refs/heads/gh-readonly-queue/pr-12-${QUEUE_SHA}" "refs/heads/gh-readonly-queue/main/pr-12-${QUEUE_SHA}x" \
+  "refs/heads/gh-readonly-queue/main/pr-1/../2-${QUEUE_SHA}"; do
+  queue_setup "fix: x"
+  apply HEAD_REF="${head_ref}"
+  run_step "pr-title: rejects the merge queue ref '${head_ref}'" fail "${ACTIONS}/${step}" "${step}"
+  expect message "not a merge queue branch of the form"
+  expect no-calls
+  finish
+done
+
 # dispatch_setup PULLS: a dispatched run of the release branch, whose open
 # pull requests are PULLS.
 dispatch_setup() {

@@ -1,7 +1,8 @@
 name: Pull request title
 description: >-
-  Fails unless the title of the pull request, or of every open pull request of
-  a dispatched branch, follows Conventional Commits with the given types.
+  Fails unless the title of the pull request, of the queued pull request of a
+  merge group, or of every open pull request of a dispatched branch, follows
+  Conventional Commits with the given types.
 inputs:
   shell-lib:
     description: The directory of the shell library, the output path of lib-actions.
@@ -22,6 +23,7 @@ runs:
         REPO: ${{ github.repository }}
         EVENT: ${{ github.event_name }}
         NUMBER: ${{ github.event.pull_request.number }}
+        HEAD_REF: ${{ github.event.merge_group.head_ref }}
         OWNER: ${{ github.repository_owner }}
         BRANCH: ${{ github.ref_name }}
         ENABLED: ${{ inputs.enabled }}
@@ -29,4 +31,4 @@ runs:
       run: >-
         /usr/bin/bash -p "$SHELL_LIB/run-step.sh"
         "$GITHUB_ACTION_PATH/scripts/step" pr-title GH_TOKEN REPO EVENT NUMBER
-        OWNER BRANCH ENABLED TYPES GITHUB_STEP_SUMMARY
+        HEAD_REF OWNER BRANCH ENABLED TYPES GITHUB_STEP_SUMMARY

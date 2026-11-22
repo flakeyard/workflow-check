@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Fails unless pull request titles follow Conventional Commits with the types
-# in TYPES: on pull_request the title of pull request NUMBER, on
+# in TYPES: on pull_request the title of pull request NUMBER, on merge_group
+# that of the queued pull request named by HEAD_REF, the queue branch, and on
 # workflow_dispatch those of every open pull request of BRANCH. Titles are read
-# from the API, so a rerun after the title was fixed passes. Other events have
-# no pull request; ENABLED=false switches the check off.
+# from the API, so a rerun after the title was fixed passes, and a title edited
+# in the merge queue is checked before the squash commit takes it. Other events
+# have no pull request; ENABLED=false switches the check off.
 set -euo pipefail
 : "${SHELL_LIB:?}" "${REPO:?}" "${EVENT?}" "${ENABLED:?}" "${TYPES?}"
 # The tools of the runner, LC_ALL=C and inherit_errexit.
@@ -17,6 +19,8 @@ source "${SHELL_LIB}/report.sh"
 
 readonly TYPES_FORM='^[a-z]+( [a-z]+)*$'
 readonly NUMBER_FORM='^[1-9][0-9]*$'
+# The ref of a merge queue branch; the group holds pull request N.
+readonly QUEUE_REF_FORM='^refs/heads/gh-readonly-queue/[^[:space:]]+/pr-([1-9][0-9]*)-[0-9a-f]{40}$'
 # Conventional Commits after the type: an optional scope, an optional "!" and
 # a description that starts with a character other than a space.
 readonly AFTER_TYPE='(\([a-z0-9._/-]+\))?!?: [^[:space:]].*$'
@@ -47,6 +51,14 @@ check_pull_request() {
   check_title "${number}" "${title}"
 }
 
+# check_merge_group: check the title of the pull request of the merge queue
+# branch HEAD_REF.
+check_merge_group() {
+  [[ ${HEAD_REF:-} =~ ${QUEUE_REF_FORM} ]] \
+    || fail "not a merge queue branch of the form refs/heads/gh-readonly-queue/<base>/pr-<number>-<sha>: \"${HEAD_REF:-}\""
+  check_pull_request "${BASH_REMATCH[1]}"
+}
+
 # check_branch: check the titles of the open pull requests of BRANCH;
 # transient errors of the API are retried.
 check_branch() {
@@ -73,6 +85,7 @@ fi
 rule=$(title_rule)
 case ${EVENT} in
   pull_request) check_pull_request "${NUMBER:-}" ;;
+  merge_group) check_merge_group ;;
   workflow_dispatch) check_branch ;;
   *) notice "not a pull request; no title to check" ;;
 esac
