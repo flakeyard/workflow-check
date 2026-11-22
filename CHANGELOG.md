@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/flakeyard/workflow-check/compare/v0.6.2...v0.7.0) (2026-11-22)
+
+
+### Features
+
+* accept merge_group and check the title of the queued pull request ([#153](https://github.com/flakeyard/workflow-check/issues/153)) ([db48903](https://github.com/flakeyard/workflow-check/commit/db489031e5d0c8fd8c3ff3b6c32a599385dd7bcf))
+
 ## [0.6.2](https://github.com/flakeyard/workflow-check/compare/v0.6.1...v0.6.2) (2026-11-18)
 
 
