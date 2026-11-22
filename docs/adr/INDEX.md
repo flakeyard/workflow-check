@@ -6,7 +6,7 @@
 
 _None._
 
-## Accepted (6)
+## Accepted (7)
 
 - [ADR-0001](records/0001-check-pull-requests-and-pushes.md) Check pull requests
   and pushes (2026-11-05)
@@ -21,6 +21,8 @@ _None._
   (2026-11-12)
 - [ADR-0006](records/0006-run-apps-of-the-flake-on-request.md) Run apps of the
   flake on request (2026-11-17)
+- [ADR-0007](records/0007-check-merge-groups-of-the-merge-queue.md) Check merge
+  groups of the merge queue (2026-11-22)
 
 ## Rejected (0)
 
