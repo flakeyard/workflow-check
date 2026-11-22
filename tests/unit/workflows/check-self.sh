@@ -33,6 +33,9 @@ if require_yq check-self.yaml; then
     '.jobs.check.with["forbid-tool-configs"] == true'
   self_test "an edit of a pull request cancels no run" \
     '.concurrency["cancel-in-progress"] | contains("github.event.action != '"'edited'"'")'
-  self_test "dispatched and edited pull requests are checked" \
-    '.on | has("workflow_dispatch") and (.pull_request.types | index("edited") != null)'
+  self_test "a merge queue run is never cancelled" \
+    '.concurrency["cancel-in-progress"] | contains("github.event_name == '"'pull_request'"'")'
+  self_test "dispatched and edited pull requests and merge groups are checked" \
+    '.on | has("workflow_dispatch") and has("merge_group")
+    and (.pull_request.types | index("edited") != null)'
 fi

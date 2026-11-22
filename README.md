@@ -25,12 +25,14 @@ on:
   schedule:
     - cron: "23 4 * * 1"
   workflow_dispatch: # dispatched checks of release pull requests
+  merge_group: # the merge queue
 
 permissions: {}
 
 concurrency:
   group: test-${{ github.ref }}
-  # A title or description edit must not cancel a long run.
+  # A title or description edit must not cancel a long run, and a run of the
+  # merge queue is never cancelled.
   cancel-in-progress: >-
     ${{ github.event_name == 'pull_request'
         && github.event.action != 'edited' }}
@@ -68,6 +70,8 @@ The caller must:
   `if: ${{ !cancelled() || github.event_name == 'workflow_dispatch' }}`: a pull
   request run cancelled by a newer push leaves no result, and a dispatched run
   reports one on every outcome;
+- trigger on `merge_group` and not cancel a `merge_group` run in progress
+  ([FY-0041][fy-0041]);
 - not cancel a run in progress for the `pull_request` action `edited`.
 
 Require the check `check / required` with GitHub Actions as its source in the
@@ -236,8 +240,12 @@ private repository of another owner reads as missing.
 
 ## Behaviour
 
-- **Events.** `pull_request`, `push`, `schedule` and `workflow_dispatch`; any
-  other event, such as `pull_request_target`, fails.
+- **Events.** `pull_request`, `push`, `schedule`, `workflow_dispatch` and
+  `merge_group`; any other event, such as `pull_request_target`, fails. On
+  `merge_group`, the title check reads the number of the queued pull request
+  from the merge queue branch, `gh-readonly-queue/<base>/pr-<number>-<sha>`, and
+  checks the title that pull request has now, since the queue squashes with the
+  title at merge time; a branch of another form fails.
 - **Required.** The job `required` fails unless every job in `needs` and every
   job of the workflow succeeded, or was skipped and may be. Jobs of the caller
   and of the workflow are told apart (`caller.<id>` and `check.<id>`), so a
@@ -290,8 +298,9 @@ only composes steps. Each step's logic is a small composite action in
 referenced with `$/`:
 
 - `preflight`: the event of the caller, from a list of supported events;
-- `pr-title`: the title of the pull request, or of every open pull request of a
-  dispatched branch, read from the API;
+- `pr-title`: the title of the pull request, of the queued pull request of a
+  merge group, or of every open pull request of a dispatched branch, read from
+  the API;
 - `renovate-config`: `renovate.json`, the only Renovate configuration, extends a
   preset of the given repositories;
 - `release-tags`: every Renovate preset and Copier template is pinned to the tag
@@ -430,3 +439,5 @@ not released yet. Until they are:
 [atom-workspace]: https://github.com/flakeyard/atom-workspace
 [fy-0012]:
   https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0012-develop-in-container.md
+[fy-0041]:
+  https://github.com/flakeyard/decisions/blob/main/docs/adr/records/0041-merge-through-the-merge-queue.md
